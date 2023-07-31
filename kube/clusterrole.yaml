@@ -1,0 +1,9 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: default
+  name: catalogitems-reader
+rules:
+- apiGroups: ["babylon.gpte.redhat.com"] # "" indicates the core API group
+  resources: ["catalogitems"]
+  verbs: ["get", "watch", "list"]
