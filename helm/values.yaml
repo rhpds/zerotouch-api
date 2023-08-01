@@ -1,0 +1,28 @@
+---
+appName: zerotouch-api
+namespace: zerotouch-api-helm
+
+deployment:
+  image: quay.io/makirill/zerotouch-api
+  tag: latest
+  strategy: RollingUpdate
+  pullPolicy: Always
+
+service:
+  type: ClusterIP
+  port:
+    api: 8080
+
+serviceAccount:
+  name: zerotouch-api
+
+babylon:
+  apiGroup: babylon.gpte.redhat.com
+
+resources:
+  limits:
+    cpu: 1
+    memory: 1Gi
+  requests:
+    cpu: 50m
+    memory: 128Mi
