@@ -26,6 +26,9 @@ service:
   port:
     api: 8080
 
+#ingressDomain: <required>
+
+
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
