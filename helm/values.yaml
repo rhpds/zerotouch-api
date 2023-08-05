@@ -1,12 +1,25 @@
 ---
-appName: zerotouch-api
-namespace: zerotouch-api-helm
+namespace:
+  # Specifies whether a namespace should be created
+  create: true
+  # The name of the namespace to use.
+  # If not set and create is true, a name is generated using the name template
+  name: zerotouch-api-dev
 
-deployment:
-  image: quay.io/makirill/zerotouch-api
-  tag: latest
-  strategy: RollingUpdate
+nameOverride: ""
+fullnameOverride: ""
+
+
+image:
+  repository: quay.io/makirill/zerotouch-api
   pullPolicy: Always
+  tagOverride: "latest"
+
+# deployment:
+#   image: quay.io/makirill/zerotouch-api
+#   tag: latest
+#   strategy: RollingUpdate
+#   pullPolicy: Always
 
 service:
   type: ClusterIP
@@ -14,7 +27,11 @@ service:
     api: 8080
 
 serviceAccount:
-  name: zerotouch-api
+  # Specifies whether a service account should be created
+  create: true
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name:
 
 babylon:
   apiGroup: babylon.gpte.redhat.com
