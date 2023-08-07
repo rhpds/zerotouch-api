@@ -14,3 +14,20 @@ spec:
     kind: Service
     name: {{ include "zerotouch-api.name" . }}
   wildcardPolicy: None
+
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: swagger-{{ include "zerotouch-api.name" . }}
+  namespace: {{ include "zerotouch-api.namespaceName" . }}
+  labels:
+    {{- include "zerotouch-api.labels" . | nindent 4 }}
+spec:
+  host: swagger-{{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }}
+  port:
+    targetPort: 8081
+  to:
+    kind: Service
+    name: {{ include "zerotouch-api.name" . }}
+  wildcardPolicy: None

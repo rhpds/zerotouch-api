@@ -25,6 +25,7 @@ service:
   type: ClusterIP
   port:
     api: 8080
+    swagger: 8081
 
 #ingressDomain: <required>
 

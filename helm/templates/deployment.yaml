@@ -31,3 +31,14 @@ spec:
           timeoutSeconds: 1
         ports:
         - containerPort: 8080
+      - name: swagger-ui
+        image: swaggerapi/swagger-ui
+        env:
+        - name: SWAGGER_JSON_URL
+          value: http://{{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }}/swagger.json
+        - name: PORT
+          value: "8081"
+        - name: VALIDATOR_URL
+          value: ""
+        ports:
+        - containerPort: 8081

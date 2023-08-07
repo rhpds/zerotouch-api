@@ -27,6 +27,7 @@ oc start-build zerotouch-api --from-dir=. --follow
 helm template helm \
 --set nameOverride=zerotouch-api-dev \
 --set namespace.create=false \
+--set ingressDomain="apps-crc.testing" \
 --set image.override="$(oc get imagestream zerotouch-api -o jsonpath='{.status.tags[?(@.tag=="latest")].items[0].dockerImageReference}')" \
 | oc apply -f -
 --------------------------------------------------------------------------------
@@ -39,6 +40,7 @@ Remove resources created from the helm template:
 helm template helm \
 --set nameOverride=zerotouch-api-dev \
 --set namespace.create=false \
+--set ingressDomain="apps-crc.testing" \
 | oc delete -f -
 ---------------------------------------------
 +

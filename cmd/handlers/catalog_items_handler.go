@@ -52,10 +52,10 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 	catalogItem, err := h.catalogItemRepo.GetByName(request.Name)
 	if err != nil {
 		return GetCatalogItemdefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
+			StatusCode: http.StatusNotFound,
 			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: "Not implemented",
+				Code:    http.StatusNotFound,
+				Message: err.Error(),
 			}}, nil
 	}
 
