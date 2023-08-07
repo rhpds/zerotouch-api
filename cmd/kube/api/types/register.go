@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// TODO: Remove hardcoding
 const GroupName = "babylon.gpte.redhat.com"
 const GroupVersion = "v1"
 

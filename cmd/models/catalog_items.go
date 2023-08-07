@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	v1 "github.com/rhpds/zerotouch-api/kube/api/types"
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/api/types"
 	"k8s.io/apiextensions-apiserver/examples/client-go/pkg/client/clientset/versioned/scheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -22,6 +22,7 @@ type CatalogItemInfo struct {
 	Description       string
 	DescriptionFormat string
 	Id                string
+	Provider          string
 }
 
 type CatalogItemRepo struct {
@@ -34,6 +35,7 @@ func NewCatalogItemRepo() *CatalogItemRepo {
 	}
 }
 
+// TODO: add pagination
 func (c *CatalogItemRepo) ListAll() ([]CatalogItemInfo, error) {
 	r := make([]CatalogItemInfo, 0, len(c.catalogItems))
 	for _, v := range c.catalogItems {
@@ -73,6 +75,7 @@ func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 	}
 
 	result := v1.CatalogItemList{}
+	//TODO: Remove hardcoded resource
 	err = restClent.
 		Get().
 		Resource("catalogitems").
@@ -93,6 +96,9 @@ func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 		info.DisplayName = annotations["babylon.gpte.redhat.com/displayName"]
 		info.Description = annotations["babylon.gpte.redhat.com/description"]
 		info.DescriptionFormat = annotations["babylon.gpte.redhat.com/descriptionFormat"]
+
+		labels := result.Items[item].ObjectMeta.Labels
+		info.Provider = labels["babylon.gpte.redhat.com/Provider"]
 
 		c.catalogItems[info.Name] = info
 	}

@@ -41,6 +41,7 @@ func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request List
 			Description:       v.Description,
 			DescriptionFormat: v.DescriptionFormat,
 			Id:                v.Id,
+			Provider:          v.Provider,
 		})
 
 	}
@@ -65,6 +66,7 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 		Description:       catalogItem.Description,
 		DescriptionFormat: catalogItem.DescriptionFormat,
 		Id:                catalogItem.Id,
+		Provider:          catalogItem.Provider,
 	}), nil
 }
 
