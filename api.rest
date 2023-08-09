@@ -1,0 +1,15 @@
+# This file contains REST requests for the API that can be used with the
+# REST Client extension for VS Code (https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+# To use it, install the extension and then open this file in VS Code.
+# You can then send the requests by clicking the "Send Request" link above each request.
+
+@baseUrl = http://localhost:20001
+
+### Get Health
+GET {{baseUrl}}/health
+
+### Get List of CatalogItems
+GET {{baseUrl}}/catalogItems
+
+### Get CatalogItem by ID
+GET {{baseUrl}}/catalogItems/ztests.test-empty-config.dev

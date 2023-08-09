@@ -1,0 +1,19 @@
+---
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "zerotouch-api.name" . }}
+  namespace: {{ include "zerotouch-api.namespaceName" . }}
+  labels:
+    {{- include "zerotouch-api.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - {{ .Values.babylon.apiGroup }}
+  resources:
+  - catalogitems
+  verbs:
+  - get
+  - list
+  - watch
+{{- end }}

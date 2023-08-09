@@ -1,0 +1,53 @@
+---
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotaions:
+    description: "This template deploys the Zero Touch API."
+  name: zerotouch-api-build
+
+parameters:
+- name: APPLICATION_NAME
+  description: The name of the application.
+  required: true
+  value: zerotouch-api
+- name: SOURCE_REPOSITORY_URL
+  description: The URL of the repository with your application source code.
+  required: true
+  value: https://github.com/rhpds/zerotouch-api.git
+- name: SOURCE_REPOSITORY_REF
+  description: The branch/tag/release to build.
+  required: true
+  value: feature/get-lab-info
+
+objects:
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    name: ${APPLICATION_NAME}
+  spec:
+    lookupPolicy:
+      local: false
+
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: ${APPLICATION_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: '${APPLICATION_NAME}:latest'
+    source:
+      git:
+        uri: ${SOURCE_REPOSITORY_URL}
+        ref: ${SOURCE_REPOSITORY_REF}
+      type: Git
+    strategy:
+      dockerStrategy:
+        dockerfilePath: Containerfile
+      type: Docker
+    triggers: []
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
