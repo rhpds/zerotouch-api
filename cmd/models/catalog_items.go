@@ -89,7 +89,6 @@ func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 	for item := range result.Items {
 
 		var info CatalogItemInfo
-		info.Id = string(result.Items[item].ObjectMeta.UID)
 		info.Name = result.Items[item].ObjectMeta.Name
 
 		annotations := result.Items[item].ObjectMeta.Annotations
@@ -99,6 +98,7 @@ func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 
 		labels := result.Items[item].ObjectMeta.Labels
 		info.Provider = labels["babylon.gpte.redhat.com/Provider"]
+		info.Id = labels["gpte.redhat.com/asset-uuid"]
 
 		c.catalogItems[info.Name] = info
 	}
