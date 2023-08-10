@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/api/types"
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"k8s.io/apiextensions-apiserver/examples/client-go/pkg/client/clientset/versioned/scheme"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
