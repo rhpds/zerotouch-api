@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
+	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -57,12 +57,12 @@ func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 		return 0, err
 	}
 
-	clientSet, err := v1.NewForConfig(config)
+	babylonClientSet, err := babylon.NewForConfig(config)
 	if err != nil {
 		return 0, err
 	}
 
-	catalogItems, err := clientSet.CatalogItems("", context.Background()).List(metav1.ListOptions{})
+	catalogItems, err := babylonClientSet.CatalogItems("", context.Background()).List(metav1.ListOptions{})
 	if err != nil {
 		return 0, err
 	}
