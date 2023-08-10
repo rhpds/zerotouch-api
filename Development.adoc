@@ -15,7 +15,7 @@ oc new-project zerotouch-api-dev
 oc process --local -f build-template.yaml | oc apply -f -
 ---------------------------------------------------------
 
-. Build babylon-notifier image from local source:
+. Build zerotouch-api image from local source:
 +
 -----------------------------------------------------
 oc start-build zerotouch-api --from-dir=. --follow

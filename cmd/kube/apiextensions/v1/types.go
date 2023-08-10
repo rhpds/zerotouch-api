@@ -2,6 +2,10 @@ package v1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+// -----------------------------------------------------------------------------
+// CatalogItem
+// -----------------------------------------------------------------------------
+
 // type CatalogItemSpec struct {
 // 	Replicas int `json:"replicas"`
 // }

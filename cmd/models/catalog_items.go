@@ -5,10 +5,7 @@ import (
 	"errors"
 
 	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
-	"k8s.io/apiextensions-apiserver/examples/client-go/pkg/client/clientset/versioned/scheme"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/rest"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -56,47 +53,31 @@ func (c *CatalogItemRepo) GetByName(name string) (CatalogItemInfo, error) {
 
 func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-
 	if err != nil {
 		return 0, err
 	}
 
-	v1.AddToScheme(scheme.Scheme)
-
-	crdConfig := *config
-	crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{Group: v1.GroupName, Version: v1.GroupVersion}
-	crdConfig.APIPath = "/apis"
-	crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-	restClent, err := rest.UnversionedRESTClientFor(&crdConfig)
+	clientSet, err := v1.NewForConfig(config)
 	if err != nil {
 		return 0, err
 	}
 
-	result := v1.CatalogItemList{}
-	//TODO: Remove hardcoded resource
-	err = restClent.
-		Get().
-		Resource("catalogitems").
-		Do(context.Background()).
-		Into(&result)
-
+	catalogItems, err := clientSet.CatalogItems("", context.Background()).List(metav1.ListOptions{})
 	if err != nil {
 		return 0, err
 	}
 
-	for item := range result.Items {
+	for item := range catalogItems.Items {
 
 		var info CatalogItemInfo
-		info.Name = result.Items[item].ObjectMeta.Name
+		info.Name = catalogItems.Items[item].ObjectMeta.Name
 
-		annotations := result.Items[item].ObjectMeta.Annotations
+		annotations := catalogItems.Items[item].ObjectMeta.Annotations
 		info.DisplayName = annotations["babylon.gpte.redhat.com/displayName"]
 		info.Description = annotations["babylon.gpte.redhat.com/description"]
 		info.DescriptionFormat = annotations["babylon.gpte.redhat.com/descriptionFormat"]
 
-		labels := result.Items[item].ObjectMeta.Labels
+		labels := catalogItems.Items[item].ObjectMeta.Labels
 		info.Provider = labels["babylon.gpte.redhat.com/Provider"]
 		info.Id = labels["gpte.redhat.com/asset-uuid"]
 
