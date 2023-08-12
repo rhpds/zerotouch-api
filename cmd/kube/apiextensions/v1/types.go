@@ -33,24 +33,26 @@ type ResourceClaimProvisionData struct {
 	GUID         string `json:"GUID"`
 }
 
-type ResourceClaimSpecSummary struct {
+type ResourceClaimStatusSummary struct {
 	ProvisionData  ResourceClaimProvisionData `json:"provision_data"`
 	RuntimeDefault string                     `json:"runtime_default"`
 	RuntimeMaximum string                     `json:"runtime_maximum"`
 	State          string                     `json:"state"`
 }
 
-type ResourceClaimSpec struct {
-	Summary ResourceClaimSpecSummary `json:"summary"`
+type ResourceClaimStatus struct {
+	Summary ResourceClaimStatusSummary `json:"summary"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ResourceClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ResourceClaimSpec `json:"spec"`
+	Spec ResourceClaimStatus `json:"status"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ResourceClaimList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -2,6 +2,18 @@
 
 https://cloud.redhat.com/blog/kubernetes-deep-dive-code-generation-customresources
 
+. Install controller-gen:
++
+-----------------------------------
+go install sigs.k8s.io/controller-tools/cmd/controller-gen
+-----------------------------------
+
+. Generate DeepCopy:
++
+-----------------------------------
+go install sigs.k8s.io/controller-tools/cmd/controller-gen
+-----------------------------------
+
 ## Runnign Locally
 
 It is possible to run the Zero Touch API locally.
