@@ -1,22 +1,20 @@
 package v1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // -----------------------------------------------------------------------------
 // CatalogItem
 // -----------------------------------------------------------------------------
 
-// type CatalogItemSpec struct {
-// 	Replicas int `json:"replicas"`
-// }
-
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type CatalogItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	// Spec CatalogItemSpec `json:"spec"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type CatalogItemList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
@@ -27,6 +25,21 @@ type CatalogItemList struct {
 // -----------------------------------------------------------------------------
 // ResourceClaim
 // -----------------------------------------------------------------------------
+
+type ResourceClaimParameterValues struct {
+	Purpose        string `json:"purpose"`
+	StartTimeStamp string `json:"start_timestamp"`
+	EndTimeStamp   string `json:"end_timestamp"`
+}
+
+type ResourceClaimProvider struct {
+	Name            string                       `json:"name"`
+	ParameterValues ResourceClaimParameterValues `json:"parameterValues"`
+}
+
+type ResourceClaimLifespan struct {
+	End string `json:"end"`
+}
 
 type ResourceClaimProvisionData struct {
 	RandomString string `json:"random_string"`
@@ -44,12 +57,18 @@ type ResourceClaimStatus struct {
 	Summary ResourceClaimStatusSummary `json:"summary"`
 }
 
+type ResourceClaimSpec struct {
+	Lifespan ResourceClaimLifespan `json:"lifespan"`
+	Provider ResourceClaimProvider `json:"provider"`
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type ResourceClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ResourceClaimStatus `json:"status"`
+	Spec   ResourceClaimSpec   `json:"spec"`
+	Status ResourceClaimStatus `json:"status"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

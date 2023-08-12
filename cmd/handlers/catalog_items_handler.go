@@ -8,6 +8,8 @@ import (
 	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"github.com/rhpds/zerotouch-api/cmd/models"
 	"k8s.io/client-go/tools/cache"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TODO: should contain a reference to the model to retrieve data from K8s API
@@ -80,26 +82,35 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error) {
 	status := OK
 
-	h.cache.Resync()
+	//	h.cache.Resync()
 
-	// keys := h.cache.ListKeys()
-	// for _, v := range keys {
-
-	// 	item, ok, err := h.cache.GetByKey(v)
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
-
-	// 	if !ok {
-	// 		fmt.Println("not found")
-	// 	}
-
-	// 	fmt.Printf("%+v\n", item.(*v1.ResourceClaim))
-	// }
-
+	// List all ResourceClaims
 	claims := h.cache.List()
 	for _, v := range claims {
 		fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
+	}
+
+	// Create a ResourceClaim
+	rc := &v1.ResourceClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-auto.babylon-empty-config.prod",
+		},
+		Spec: v1.ResourceClaimSpec{
+			Provider: v1.ResourceClaimProvider{
+				Name: "tests.babylon-empty-config.prod",
+				ParameterValues: v1.ResourceClaimParameterValues{
+					Purpose: "Testing",
+				},
+			},
+			Lifespan: v1.ResourceClaimLifespan{
+				End: "2023-08-14T00:00:00Z",
+			},
+		},
+	}
+
+	err := models.CreateResourceClaim(rc)
+	if err != nil {
+		fmt.Printf("Error creating ResourceClaim: %s\n", err.Error())
 	}
 
 	return Health200JSONResponse{

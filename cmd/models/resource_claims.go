@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/poolboy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -61,4 +62,23 @@ func GetStore() cache.Store {
 	store := poolboy.WatchResourceResources(poolboyClientSet, "")
 
 	return store
+}
+
+func CreateResourceClaim(resourceClaim *v1.ResourceClaim) error {
+	config, err := clientcmd.BuildConfigFromFlags("", "/home/kmalgich/.kube/config")
+	if err != nil {
+		return err
+	}
+
+	poolboyClientSet, err := poolboy.NewForConfig(config, context.Background())
+	if err != nil {
+		return err
+	}
+
+	_, err = poolboyClientSet.ResourceClaims("user-kmalgich-redhat-com").Create(resourceClaim)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
