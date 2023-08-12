@@ -189,6 +189,7 @@ func WatchResourceResources(clientSet PoolboyResourcesInterface, namespace strin
 		cache.ResourceEventHandlerFuncs{},
 	)
 
+	// TODO: Provide chan object to stop the controller
 	go resourceClaimController.Run(wait.NeverStop)
 	return resourceClaimStore
 }

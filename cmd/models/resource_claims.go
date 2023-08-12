@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"fmt"
+	"time"
 
 	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/poolboy"
@@ -11,7 +12,77 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// TODO: Remove this function
+type ResourceClaimsController struct {
+	clientSet *poolboy.PoolboyResourcesClient
+	store     cache.Store
+}
+
+// TODO:
+// What is spec.lifespan?
+type ResourceClaimParameters struct {
+	Name         string
+	Namespace    string
+	ProviderName string
+	Purpose      string
+	Start        time.Time
+	Stop         time.Time
+}
+
+func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*ResourceClaimsController, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
+	if err != nil {
+		return nil, err
+	}
+
+	poolboyClientSet, err := poolboy.NewForConfig(config, ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Watch for resource claims in the all namespaces (last parameter)
+	// and store them in cache
+	store := poolboy.WatchResourceResources(poolboyClientSet, "")
+
+	return &ResourceClaimsController{
+		clientSet: poolboyClientSet,
+		store:     store,
+	}, nil
+}
+
+func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimParameters) error {
+	rc := &v1.ResourceClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: parameters.Name,
+		},
+		Spec: v1.ResourceClaimSpec{
+			Provider: v1.ResourceClaimProvider{
+				Name: parameters.ProviderName,
+				ParameterValues: v1.ResourceClaimParameterValues{
+					Purpose:        parameters.Purpose,
+					StartTimeStamp: parameters.Start.Format(time.RFC3339Nano), //TODO: Check if this is the correct format
+					EndTimeStamp:   parameters.Stop.Format(time.RFC3339Nano),
+				},
+			},
+			Lifespan: v1.ResourceClaimLifespan{
+				End: "2023-08-14T00:00:00Z",
+			},
+		},
+	}
+
+	_, err := c.clientSet.ResourceClaims(parameters.Namespace).Create(rc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+//
+// TODO: Bellow are draft functions, they should be removed
+//
+//
+
 func PrintResourceClaims() (int, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", "/home/kmalgich/.kube/config")
 	if err != nil {
@@ -46,39 +117,4 @@ func PrintResourceClaims() (int, error) {
 	// }
 
 	// return len(keys), nil
-}
-
-func GetStore() cache.Store {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/kmalgich/.kube/config")
-	if err != nil {
-		panic(err)
-	}
-
-	poolboyClientSet, err := poolboy.NewForConfig(config, context.Background())
-	if err != nil {
-		panic(err)
-	}
-
-	store := poolboy.WatchResourceResources(poolboyClientSet, "")
-
-	return store
-}
-
-func CreateResourceClaim(resourceClaim *v1.ResourceClaim) error {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/kmalgich/.kube/config")
-	if err != nil {
-		return err
-	}
-
-	poolboyClientSet, err := poolboy.NewForConfig(config, context.Background())
-	if err != nil {
-		return err
-	}
-
-	_, err = poolboyClientSet.ResourceClaims("user-kmalgich-redhat-com").Create(resourceClaim)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

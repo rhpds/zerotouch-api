@@ -4,30 +4,25 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"github.com/rhpds/zerotouch-api/cmd/models"
-	"k8s.io/client-go/tools/cache"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // TODO: should contain a reference to the model to retrieve data from K8s API
 // e.g.: CatalogItems
 type CatalogItemsHandler struct {
 	catalogItemRepo *models.CatalogItemRepo
-
-	// TODO: testing
-	cache cache.Store
+	rcController    *models.ResourceClaimsController
 }
 
 // Make sure we conform to the StrictServer interface
 var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 
-func NewCatalogItemsHandler(catalogItemRepo *models.CatalogItemRepo) *CatalogItemsHandler {
+func NewCatalogItemsHandler(catalogItemRepo *models.CatalogItemRepo, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
 		catalogItemRepo: catalogItemRepo,
-		cache:           models.GetStore(), //TODO: testing
+		rcController:    rcController,
 	}
 }
 
@@ -85,30 +80,22 @@ func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestO
 	//	h.cache.Resync()
 
 	// List all ResourceClaims
-	claims := h.cache.List()
-	for _, v := range claims {
-		fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
-	}
+	// claims := h.cache.List()
+	// for _, v := range claims {
+	// 	fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
+	// }
 
 	// Create a ResourceClaim
-	rc := &v1.ResourceClaim{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-auto.babylon-empty-config.prod",
-		},
-		Spec: v1.ResourceClaimSpec{
-			Provider: v1.ResourceClaimProvider{
-				Name: "tests.babylon-empty-config.prod",
-				ParameterValues: v1.ResourceClaimParameterValues{
-					Purpose: "Testing",
-				},
-			},
-			Lifespan: v1.ResourceClaimLifespan{
-				End: "2023-08-14T00:00:00Z",
-			},
-		},
+	rc := models.ResourceClaimParameters{
+		Name:         "test-auto-3.babylon-empty-config.prod",
+		Namespace:    "user-kmalgich-redhat-com",
+		ProviderName: "tests.babylon-empty-config.prod",
+		Purpose:      "Testing",
+		Start:        time.Now(),
+		Stop:         time.Now().Add(1 * time.Hour),
 	}
 
-	err := models.CreateResourceClaim(rc)
+	err := h.rcController.CreateResourceClaim(rc)
 	if err != nil {
 		fmt.Printf("Error creating ResourceClaim: %s\n", err.Error())
 	}

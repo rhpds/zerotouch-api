@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strconv"
@@ -74,7 +75,12 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 
 	log.Logger.Info("Loaded " + strconv.Itoa(itemsLoaded) + " catalog items")
 
-	catalogItemsHandler := handlers.NewCatalogItemsHandler(catalogItemRepo) // TODO: create new model controller and attache it to the api handler
+	resourceClaimsController, err := models.NewResourceClaimsController(kuebeconfig, context.Background())
+	if err != nil {
+		log.Err.Fatal("Error creating resource claims controller", err)
+	}
+
+	catalogItemsHandler := handlers.NewCatalogItemsHandler(catalogItemRepo, resourceClaimsController)
 
 	strictHandler := handlers.NewStrictHandler(catalogItemsHandler, nil)
 	r := chi.NewRouter()
