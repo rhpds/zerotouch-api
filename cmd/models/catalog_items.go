@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets"
+	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/babylon"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 )

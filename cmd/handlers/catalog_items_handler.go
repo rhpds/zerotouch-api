@@ -2,15 +2,21 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	"github.com/rhpds/zerotouch-api/cmd/models"
+	"k8s.io/client-go/tools/cache"
 )
 
 // TODO: should contain a reference to the model to retrieve data from K8s API
 // e.g.: CatalogItems
 type CatalogItemsHandler struct {
 	catalogItemRepo *models.CatalogItemRepo
+
+	// TODO: testing
+	cache cache.Store
 }
 
 // Make sure we conform to the StrictServer interface
@@ -19,6 +25,7 @@ var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 func NewCatalogItemsHandler(catalogItemRepo *models.CatalogItemRepo) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
 		catalogItemRepo: catalogItemRepo,
+		cache:           models.GetStore(), //TODO: testing
 	}
 }
 
@@ -72,6 +79,28 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 
 func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error) {
 	status := OK
+
+	h.cache.Resync()
+
+	// keys := h.cache.ListKeys()
+	// for _, v := range keys {
+
+	// 	item, ok, err := h.cache.GetByKey(v)
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
+
+	// 	if !ok {
+	// 		fmt.Println("not found")
+	// 	}
+
+	// 	fmt.Printf("%+v\n", item.(*v1.ResourceClaim))
+	// }
+
+	claims := h.cache.List()
+	for _, v := range claims {
+		fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
+	}
 
 	return Health200JSONResponse{
 		Status: &status,

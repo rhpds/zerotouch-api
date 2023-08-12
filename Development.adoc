@@ -1,3 +1,30 @@
+## Code Genereation
+
+https://cloud.redhat.com/blog/kubernetes-deep-dive-code-generation-customresources
+
+## Runnign Locally
+
+It is possible to run the Zero Touch API locally.
+
+. Login to the target OpenShift cluster using 'oc login':
++
+-----------------------------------
+oc login https://api.crc.testing:6443
+-----------------------------------
+
+. Run the Zero Touch API locally using `go run` (KUBECONFIG environment variable must be set and point to a valid kubeconfig file):
++
+-----------------------------------
+KUBECONFIG=$HOME/.kube/config go run ./cmd
+-----------------------------------
+
+. Test the Zero Touch API using `curl`:
++
+-----------------------------------
+curl -i http://localhost:8080/health
+-----------------------------------
+
+
 ## Development OpenShift Build
 
 The OpenShift build process is a bit slower for development but has the advantage of being a bit closer to a normal deployment of the Zero Touch API.
