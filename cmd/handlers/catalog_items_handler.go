@@ -2,9 +2,7 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/rhpds/zerotouch-api/cmd/models"
 )
@@ -85,20 +83,38 @@ func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestO
 	// 	fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
 	// }
 
-	// Create a ResourceClaim
-	rc := models.ResourceClaimParameters{
-		Name:         "test-auto-3.babylon-empty-config.prod",
-		Namespace:    "user-kmalgich-redhat-com",
-		ProviderName: "tests.babylon-empty-config.prod",
-		Purpose:      "Testing",
-		Start:        time.Now(),
-		Stop:         time.Now().Add(1 * time.Hour),
-	}
+	// // Create a ResourceClaim
+	// rc := models.ResourceClaimParameters{
+	// 	Name:         "test-auto-1.babylon-empty-config.prod",
+	// 	Namespace:    "user-kmalgich-redhat-com",
+	// 	ProviderName: "tests.babylon-empty-config.prod",
+	// 	Purpose:      "Testing",
+	// 	Start:        time.Now(),
+	// 	Stop:         time.Now().Add(1 * time.Hour),
+	// 	End:          time.Now().Add(24 * time.Hour),
+	// }
 
-	err := h.rcController.CreateResourceClaim(rc)
-	if err != nil {
-		fmt.Printf("Error creating ResourceClaim: %s\n", err.Error())
-	}
+	// err := h.rcController.CreateResourceClaim(rc)
+	// if err != nil {
+	// 	fmt.Printf("Error creating ResourceClaim: %s\n", err.Error())
+	// }
+
+	// // Get a ResourceClaim status
+	// claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", "test-auto-1.babylon-empty-config.prod")
+	// if err != nil {
+	// 	fmt.Printf("Error getting ResourceClaim status: %s\n", err.Error())
+	// }
+
+	// if !ok {
+	// 	fmt.Printf("ResourceClaim not found\n")
+	// }
+
+	// fmt.Printf("Claim status: %+v\n", claimStatus)
+
+	// err := h.rcController.DeleteResourceClaim("user-kmalgich-redhat-com", "test-auto-1.babylon-empty-config.prod")
+	// if err != nil {
+	// 	fmt.Printf("Error deleting ResourceClaim: %s\n", err.Error())
+	// }
 
 	return Health200JSONResponse{
 		Status: &status,

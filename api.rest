@@ -3,7 +3,7 @@
 # To use it, install the extension and then open this file in VS Code.
 # You can then send the requests by clicking the "Send Request" link above each request.
 
-@baseUrl = http://localhost:20001
+@baseUrl = http://localhost:8080
 
 ### Get Health
 GET {{baseUrl}}/health

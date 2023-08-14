@@ -17,8 +17,6 @@ type ResourceClaimsController struct {
 	store     cache.Store
 }
 
-// TODO:
-// What is spec.lifespan?
 type ResourceClaimParameters struct {
 	Name         string
 	Namespace    string
@@ -26,6 +24,15 @@ type ResourceClaimParameters struct {
 	Purpose      string
 	Start        time.Time
 	Stop         time.Time
+	End          time.Time
+}
+
+type ResourceClaimStatus struct {
+	GUID           string
+	random_string  string
+	runtimeDefault string
+	runtimeMaximum string
+	state          string
 }
 
 func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*ResourceClaimsController, error) {
@@ -59,12 +66,12 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 				Name: parameters.ProviderName,
 				ParameterValues: v1.ResourceClaimParameterValues{
 					Purpose:        parameters.Purpose,
-					StartTimeStamp: parameters.Start.Format(time.RFC3339Nano), //TODO: Check if this is the correct format
-					EndTimeStamp:   parameters.Stop.Format(time.RFC3339Nano),
+					StartTimeStamp: parameters.Start.UTC().Format(time.RFC3339),
+					EndTimeStamp:   parameters.Stop.UTC().Format(time.RFC3339),
 				},
 			},
 			Lifespan: v1.ResourceClaimLifespan{
-				End: "2023-08-14T00:00:00Z",
+				End: parameters.End.UTC().Format(time.RFC3339),
 			},
 		},
 	}
@@ -78,43 +85,24 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 
 }
 
-//
-// TODO: Bellow are draft functions, they should be removed
-//
-//
+func (c *ResourceClaimsController) DeleteResourceClaim(namespace string, name string) error {
+	return c.clientSet.ResourceClaims(namespace).Delete(name, &metav1.DeleteOptions{})
+}
 
-func PrintResourceClaims() (int, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", "/home/kmalgich/.kube/config")
-	if err != nil {
-		return 0, err
+func (c *ResourceClaimsController) GetResourceClaimStatus(namespace string, name string) (*ResourceClaimStatus, bool, error) {
+
+	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", namespace, name))
+	if err != nil || !ok {
+		return nil, ok, err
 	}
 
-	poolboyClientSet, err := poolboy.NewForConfig(config, context.Background())
-	if err != nil {
-		return 0, err
-	}
+	rc := item.(*v1.ResourceClaim)
 
-	resourceClaims, err := poolboyClientSet.ResourceClaims("").List(metav1.ListOptions{})
-	if err != nil {
-		return 0, err
-	}
-
-	for _, resourceClaim := range resourceClaims.Items {
-		fmt.Println(resourceClaim.Name)
-	}
-
-	return len(resourceClaims.Items), nil
-
-	//----
-	// store := poolboy.WatchResourceResources(poolboyClientSet, "")
-
-	// store.Resync()
-
-	// keys := store.ListKeys()
-
-	// for key := range keys {
-	// 	fmt.Println(key)
-	// }
-
-	// return len(keys), nil
+	return &ResourceClaimStatus{
+		GUID:           rc.Status.Summary.ProvisionData.GUID,
+		random_string:  rc.Status.Summary.ProvisionData.RandomString,
+		runtimeDefault: rc.Status.Summary.RuntimeDefault,
+		runtimeMaximum: rc.Status.Summary.RuntimeMaximum,
+		state:          rc.Status.Summary.State,
+	}, ok, nil
 }
