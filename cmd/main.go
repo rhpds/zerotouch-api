@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"strconv"
 
 	middleware "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
 	"github.com/getkin/kin-openapi/openapi3"
@@ -67,20 +66,25 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 	}
 
 	// Create an instance of the API handler that satisfies the generated interface
-	catalogItemRepo := models.NewCatalogItemRepo()
-	itemsLoaded, err := catalogItemRepo.Refresh(kuebeconfig)
-	if err != nil {
-		log.Err.Fatal("Error loading catalog items", err)
-	}
+	// catalogItemRepo := models.NewCatalogItemRepo()
+	// itemsLoaded, err := catalogItemRepo.Refresh(kuebeconfig)
+	// if err != nil {
+	// 	log.Err.Fatal("Error loading catalog items", err)
+	// }
 
-	log.Logger.Info("Loaded " + strconv.Itoa(itemsLoaded) + " catalog items")
+	// log.Logger.Info("Loaded " + strconv.Itoa(itemsLoaded) + " catalog items")
+
+	catalogItemsController, err := models.NewCatalogItemsController(kuebeconfig, context.Background(), "")
+	if err != nil {
+		log.Err.Fatal("Error creating catalog items controller", err)
+	}
 
 	resourceClaimsController, err := models.NewResourceClaimsController(kuebeconfig, context.Background())
 	if err != nil {
 		log.Err.Fatal("Error creating resource claims controller", err)
 	}
 
-	catalogItemsHandler := handlers.NewCatalogItemsHandler(catalogItemRepo, resourceClaimsController)
+	catalogItemsHandler := handlers.NewCatalogItemsHandler(catalogItemsController, resourceClaimsController)
 
 	strictHandler := handlers.NewStrictHandler(catalogItemsHandler, nil)
 	r := chi.NewRouter()

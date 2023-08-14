@@ -174,6 +174,7 @@ func (c *resourceClaimsClient) Delete(name string, opts *metav1.DeleteOptions) e
 		Error()
 }
 
+// TODO: Rename it
 func WatchResourceResources(clientSet PoolboyResourcesInterface, namespace string) cache.Store {
 	resourceClaimStore, resourceClaimController := cache.NewInformer(
 		&cache.ListWatch{
@@ -185,7 +186,7 @@ func WatchResourceResources(clientSet PoolboyResourcesInterface, namespace strin
 			},
 		},
 		&v1.ResourceClaim{},
-		1*time.Minute,
+		1*time.Minute, // TODO: should be zero?
 		cache.ResourceEventHandlerFuncs{},
 	)
 

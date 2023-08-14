@@ -35,6 +35,7 @@ type ResourceClaimStatus struct {
 	state          string
 }
 
+// TODO: Add namespace parameter
 func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*ResourceClaimsController, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {

@@ -7,33 +7,24 @@ import (
 	"github.com/rhpds/zerotouch-api/cmd/models"
 )
 
-// TODO: should contain a reference to the model to retrieve data from K8s API
-// e.g.: CatalogItems
 type CatalogItemsHandler struct {
-	catalogItemRepo *models.CatalogItemRepo
-	rcController    *models.ResourceClaimsController
+	catalogItemsController *models.CatalogItemsController
+	rcController           *models.ResourceClaimsController
 }
 
 // Make sure we conform to the StrictServer interface
 var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 
-func NewCatalogItemsHandler(catalogItemRepo *models.CatalogItemRepo, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
+func NewCatalogItemsHandler(catalogItemsControler *models.CatalogItemsController, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
-		catalogItemRepo: catalogItemRepo,
-		rcController:    rcController,
+		catalogItemsController: catalogItemsControler,
+		rcController:           rcController,
 	}
 }
 
+// TODO: add pagination
 func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request ListCatalogItemsRequestObject) (ListCatalogItemsResponseObject, error) {
-	catalogItemList, err := h.catalogItemRepo.ListAll()
-	if err != nil {
-		return ListCatalogItemsdefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}}, nil
-	}
+	catalogItemList := h.catalogItemsController.ListAll()
 
 	items := make([]CatalogItem, 0, len(catalogItemList))
 	for _, v := range catalogItemList {
@@ -52,13 +43,22 @@ func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request List
 }
 
 func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCatalogItemRequestObject) (GetCatalogItemResponseObject, error) {
-	catalogItem, err := h.catalogItemRepo.GetByName(request.Name)
+	catalogItem, ok, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
+		return GetCatalogItemdefaultJSONResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body: Error{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}}, nil
+	}
+
+	if !ok {
 		return GetCatalogItemdefaultJSONResponse{
 			StatusCode: http.StatusNotFound,
 			Body: Error{
 				Code:    http.StatusNotFound,
-				Message: err.Error(),
+				Message: "Not Found",
 			}}, nil
 	}
 
