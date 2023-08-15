@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/rhpds/zerotouch-api/cmd/models"
@@ -72,49 +73,122 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 	}), nil
 }
 
-func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error) {
-	status := OK
+func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request CreateProvisionRequestObject) (CreateProvisionResponseObject, error) {
+	// TODO: Get namespace from environment variable
+	// TODO: Get default time values from CI
+	rc := models.ResourceClaimParameters{
+		Name:         request.Body.Name,
+		Namespace:    "user-kmalgich-redhat-com",
+		ProviderName: request.Body.ProviderName,
+		Purpose:      request.Body.Purpose,
+		Start:        *request.Body.Start,
+		Stop:         *request.Body.Stop,
+		End:          *request.Body.End,
+	}
 
-	//	h.cache.Resync()
-
-	// List all ResourceClaims
-	// claims := h.cache.List()
-	// for _, v := range claims {
-	// 	fmt.Printf("%+v\n\n", v.(*v1.ResourceClaim))
-	// }
-
-	// // Create a ResourceClaim
-	// rc := models.ResourceClaimParameters{
-	// 	Name:         "test-auto-1.babylon-empty-config.prod",
-	// 	Namespace:    "user-kmalgich-redhat-com",
-	// 	ProviderName: "tests.babylon-empty-config.prod",
-	// 	Purpose:      "Testing",
-	// 	Start:        time.Now(),
-	// 	Stop:         time.Now().Add(1 * time.Hour),
-	// 	End:          time.Now().Add(24 * time.Hour),
-	// }
-
-	// err := h.rcController.CreateResourceClaim(rc)
-	// if err != nil {
-	// 	fmt.Printf("Error creating ResourceClaim: %s\n", err.Error())
-	// }
+	err := h.rcController.CreateResourceClaim(rc)
+	if err != nil {
+		return CreateProvisiondefaultJSONResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body: Error{
+				Code:    http.StatusInternalServerError,
+				Message: fmt.Sprintf("Can't start provision %s: %s", request.Body.Name, err.Error()),
+			}}, nil
+	}
 
 	// // Get a ResourceClaim status
-	// claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", "test-auto-1.babylon-empty-config.prod")
+	// claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", request.Body.Name)
 	// if err != nil {
-	// 	fmt.Printf("Error getting ResourceClaim status: %s\n", err.Error())
+	// 	return CreateProvisiondefaultJSONResponse{
+	// 		StatusCode: http.StatusInternalServerError,
+	// 		Body: Error{
+	// 			Code:    http.StatusInternalServerError,
+	// 			Message: err.Error(),
+	// 		}}, nil
 	// }
 
 	// if !ok {
-	// 	fmt.Printf("ResourceClaim not found\n")
+	// 	return CreateProvisiondefaultJSONResponse{
+	// 		StatusCode: http.StatusNotFound,
+	// 		Body: Error{
+	// 			Code:    http.StatusNotFound,
+	// 			Message: "Not Found",
+	// 		}}, nil
 	// }
 
-	// fmt.Printf("Claim status: %+v\n", claimStatus)
+	return CreateProvision201JSONResponse{
+		Body: ProvisionStatus{
+			State:          "",
+			GUID:           "",
+			RandomString:   "",
+			RuntimeDefault: "",
+			RuntimeMaximum: "",
+		},
+		Headers: CreateProvision201ResponseHeaders{
+			Location: fmt.Sprintf("/provision/%s", request.Body.Name),
+		},
+	}, nil
 
-	// err := h.rcController.DeleteResourceClaim("user-kmalgich-redhat-com", "test-auto-1.babylon-empty-config.prod")
-	// if err != nil {
-	// 	fmt.Printf("Error deleting ResourceClaim: %s\n", err.Error())
-	// }
+	// return CreateProvision201JSONResponse{
+	// 	Body: ProvisionStatus{
+	// 		State:          claimStatus.State,
+	// 		GUID:           claimStatus.GUID,
+	// 		RandomString:   claimStatus.RandomString,
+	// 		RuntimeDefault: claimStatus.RuntimeDefault,
+	// 		RuntimeMaximum: claimStatus.RuntimeMaximum,
+	// 	},
+	// 	Headers: CreateProvision201ResponseHeaders{
+	// 		Location: fmt.Sprintf("/provision/%s", request.Body.Name),
+	// 	},
+	// }, nil
+}
+
+func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {
+	err := h.rcController.DeleteResourceClaim("user-kmalgich-redhat-com", request.Name)
+	if err != nil {
+		return DeleteProvisiondefaultJSONResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body: Error{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}}, nil
+	}
+
+	return DeleteProvision204Response{}, nil
+}
+
+func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request GetProvisionStatusRequestObject) (GetProvisionStatusResponseObject, error) {
+	claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", request.Name)
+	if err != nil {
+		return GetProvisionStatusdefaultJSONResponse{
+			StatusCode: http.StatusInternalServerError,
+			Body: Error{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}}, nil
+	}
+
+	if !ok {
+		return GetProvisionStatusdefaultJSONResponse{
+			StatusCode: http.StatusNotFound,
+			Body: Error{
+				Code:    http.StatusNotFound,
+				Message: "Not Found",
+			}}, nil
+	}
+
+	return GetProvisionStatus200JSONResponse(ProvisionStatus{
+		State:          claimStatus.State,
+		GUID:           claimStatus.GUID,
+		RandomString:   claimStatus.RandomString,
+		RuntimeDefault: claimStatus.RuntimeDefault,
+		RuntimeMaximum: claimStatus.RuntimeMaximum,
+	}), nil
+
+}
+
+func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error) {
+	status := OK
 
 	return Health200JSONResponse{
 		Status: &status,

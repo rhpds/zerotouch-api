@@ -68,7 +68,7 @@ type ResourceClaim struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   ResourceClaimSpec   `json:"spec"`
-	Status ResourceClaimStatus `json:"status"`
+	Status ResourceClaimStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

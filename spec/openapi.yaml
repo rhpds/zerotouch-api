@@ -8,6 +8,13 @@ info:
 servers:
   - url: http://localhost:8080
   
+tags:
+  - name: Catalog Items
+    description: Getting information about Catalog Items
+  - name: Provisioning
+    description: Managing environment provisioning
+  - name: Admin
+    description: Administration
 components:
   schemas:
     CatalogItem:
@@ -32,6 +39,47 @@ components:
         - Description
         - DescriptionFormat
         - Provider
+    ProvisionDetails:
+      type: object
+      properties:
+        Name:
+          type: string
+        ProviderName:
+          type: string
+        Purpose:
+          type: string
+        Start:
+          type: string
+          format: date-time
+        Stop:
+          type: string
+          format: date-time
+        End:
+          type: string
+          format: date-time
+      required:
+       - Name
+       - ProviderName
+       - Purpose
+    ProvisionStatus:
+      type: object
+      properties:
+        GUID:
+          type: string
+        randomString:
+          type: string
+        runtimeDefault:
+          type: string
+        runtimeMaximum:
+          type: string
+        state:
+          type: string
+      required:
+        - GUID
+        - randomString
+        - runtimeDefault
+        - runtimeMaximum
+        - state
     Status:
       type: object
       properties:
@@ -59,6 +107,8 @@ components:
 paths:
   /health:
     get:
+      tags:
+        - Admin
       summary: Health check
       description: Health check
       operationId: health
@@ -72,6 +122,8 @@ paths:
 
   /catalogItems:
     get:
+      tags:
+        - Catalog Items
       summary: List all Catalog Items
       description: List all Catalog Items
       operationId: listCatalogItems
@@ -93,6 +145,8 @@ paths:
                 
   /catalogItems/{name}:
     get:
+      tags:
+        - Catalog Items
       summary: Get a Catalog Item
       description: Get a Catalog Item by Name
       operationId: getCatalogItem
@@ -110,6 +164,87 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CatalogItem'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /provision:
+    post:
+      tags:
+        - Provisioning
+      summary: Create new provision
+      description: Create new provision
+      operationId: createProvision
+      requestBody:
+        description: Provision details to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvisionDetails'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Location of the new provision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvisionStatus'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /provision/{name}: 
+    get:
+      tags:
+        - Provisioning
+      summary: Get provision status
+      description: Get provision status by name
+      operationId: getProvisionStatus
+      parameters:
+        - name: name
+          in: path
+          description: Provision name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvisionStatus'
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Provisioning
+      summary: Destroy provision
+      description: Destroy provision by name
+      operationId: deleteProvision
+      parameters:
+        - name: name
+          in: path
+          description: Provision name
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
         default:
           description: unexpected error
           content:

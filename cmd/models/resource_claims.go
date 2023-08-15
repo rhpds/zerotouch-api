@@ -29,10 +29,10 @@ type ResourceClaimParameters struct {
 
 type ResourceClaimStatus struct {
 	GUID           string
-	random_string  string
-	runtimeDefault string
-	runtimeMaximum string
-	state          string
+	RandomString   string // TODO: fix naming
+	RuntimeDefault string
+	RuntimeMaximum string
+	State          string
 }
 
 // TODO: Add namespace parameter
@@ -101,9 +101,9 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(namespace string, name
 
 	return &ResourceClaimStatus{
 		GUID:           rc.Status.Summary.ProvisionData.GUID,
-		random_string:  rc.Status.Summary.ProvisionData.RandomString,
-		runtimeDefault: rc.Status.Summary.RuntimeDefault,
-		runtimeMaximum: rc.Status.Summary.RuntimeMaximum,
-		state:          rc.Status.Summary.State,
+		RandomString:   rc.Status.Summary.ProvisionData.RandomString,
+		RuntimeDefault: rc.Status.Summary.RuntimeDefault,
+		RuntimeMaximum: rc.Status.Summary.RuntimeMaximum,
+		State:          rc.Status.Summary.State,
 	}, ok, nil
 }
