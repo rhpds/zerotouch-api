@@ -81,12 +81,11 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 		Namespace:    "user-kmalgich-redhat-com",
 		ProviderName: request.Body.ProviderName,
 		Purpose:      request.Body.Purpose,
-		Start:        *request.Body.Start,
-		Stop:         *request.Body.Stop,
-		End:          *request.Body.End,
+		Start:        request.Body.Start,
+		Stop:         request.Body.Stop,
 	}
 
-	err := h.rcController.CreateResourceClaim(rc)
+	rcInfo, err := h.rcController.CreateResourceClaim(rc)
 	if err != nil {
 		return CreateProvisiondefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -96,51 +95,16 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 			}}, nil
 	}
 
-	// // Get a ResourceClaim status
-	// claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", request.Body.Name)
-	// if err != nil {
-	// 	return CreateProvisiondefaultJSONResponse{
-	// 		StatusCode: http.StatusInternalServerError,
-	// 		Body: Error{
-	// 			Code:    http.StatusInternalServerError,
-	// 			Message: err.Error(),
-	// 		}}, nil
-	// }
-
-	// if !ok {
-	// 	return CreateProvisiondefaultJSONResponse{
-	// 		StatusCode: http.StatusNotFound,
-	// 		Body: Error{
-	// 			Code:    http.StatusNotFound,
-	// 			Message: "Not Found",
-	// 		}}, nil
-	// }
-
 	return CreateProvision201JSONResponse{
-		Body: ProvisionStatus{
-			State:          "",
-			GUID:           "",
-			RandomString:   "",
-			RuntimeDefault: "",
-			RuntimeMaximum: "",
+		Body: ProvisionInfo{
+			Name:      rcInfo.Name,
+			UID:       rcInfo.UID,
+			CreatedAt: &rcInfo.CreatedAt,
 		},
 		Headers: CreateProvision201ResponseHeaders{
-			Location: fmt.Sprintf("/provision/%s", request.Body.Name),
+			Location: fmt.Sprintf("/provision/%s", rcInfo.Name),
 		},
 	}, nil
-
-	// return CreateProvision201JSONResponse{
-	// 	Body: ProvisionStatus{
-	// 		State:          claimStatus.State,
-	// 		GUID:           claimStatus.GUID,
-	// 		RandomString:   claimStatus.RandomString,
-	// 		RuntimeDefault: claimStatus.RuntimeDefault,
-	// 		RuntimeMaximum: claimStatus.RuntimeMaximum,
-	// 	},
-	// 	Headers: CreateProvision201ResponseHeaders{
-	// 		Location: fmt.Sprintf("/provision/%s", request.Body.Name),
-	// 	},
-	// }, nil
 }
 
 func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {

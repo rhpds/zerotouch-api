@@ -39,7 +39,7 @@ components:
         - Description
         - DescriptionFormat
         - Provider
-    ProvisionDetails:
+    ProvisionParams:
       type: object
       properties:
         Name:
@@ -54,13 +54,25 @@ components:
         Stop:
           type: string
           format: date-time
-        End:
-          type: string
-          format: date-time
       required:
        - Name
        - ProviderName
        - Purpose
+       - Start
+       - Stop
+    ProvisionInfo:
+      type: object
+      properties:
+        Name:
+          type: string
+        UID:
+          type: string
+        CreatedAt:
+          type: string
+          format: date-time
+      required:
+        - Name
+        - UID
     ProvisionStatus:
       type: object
       properties:
@@ -183,7 +195,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProvisionDetails'
+              $ref: '#/components/schemas/ProvisionParams'
       responses:
         '201':
           description: Created
@@ -195,7 +207,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProvisionStatus'
+                $ref: '#/components/schemas/ProvisionInfo'
         default:
           description: unexpected error
           content:

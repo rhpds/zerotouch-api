@@ -37,10 +37,6 @@ type ResourceClaimProvider struct {
 	ParameterValues ResourceClaimParameterValues `json:"parameterValues"`
 }
 
-type ResourceClaimLifespan struct {
-	End string `json:"end"`
-}
-
 type ResourceClaimProvisionData struct {
 	RandomString string `json:"random_string"`
 	GUID         string `json:"GUID"`
@@ -58,7 +54,6 @@ type ResourceClaimStatus struct {
 }
 
 type ResourceClaimSpec struct {
-	Lifespan ResourceClaimLifespan `json:"lifespan"`
 	Provider ResourceClaimProvider `json:"provider"`
 }
 

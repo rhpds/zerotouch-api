@@ -2,7 +2,6 @@ package poolboy
 
 import (
 	"context"
-	"time"
 
 	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,9 +55,6 @@ func NewForConfig(c *rest.Config, ctx context.Context) (*PoolboyResourcesClient,
 	config := *c
 	config.ContentConfig.GroupVersion = &schemaGroupVersion
 	config.APIPath = "/apis"
-
-	// It seems that serializer bellow affects watch events
-	//config.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
 	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 	config.UserAgent = rest.DefaultKubernetesUserAgent()
 
@@ -174,8 +170,7 @@ func (c *resourceClaimsClient) Delete(name string, opts *metav1.DeleteOptions) e
 		Error()
 }
 
-// TODO: Rename it
-func WatchResourceResources(clientSet PoolboyResourcesInterface, namespace string) cache.Store {
+func WatchResources(clientSet PoolboyResourcesInterface, namespace string) cache.Store {
 	resourceClaimStore, resourceClaimController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
@@ -186,7 +181,7 @@ func WatchResourceResources(clientSet PoolboyResourcesInterface, namespace strin
 			},
 		},
 		&v1.ResourceClaim{},
-		1*time.Minute, // TODO: should be zero?
+		0,
 		cache.ResourceEventHandlerFuncs{},
 	)
 

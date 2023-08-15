@@ -24,15 +24,21 @@ type ResourceClaimParameters struct {
 	Purpose      string
 	Start        time.Time
 	Stop         time.Time
-	End          time.Time
+	// End          time.Time
 }
 
 type ResourceClaimStatus struct {
 	GUID           string
-	RandomString   string // TODO: fix naming
+	RandomString   string
 	RuntimeDefault string
 	RuntimeMaximum string
 	State          string
+}
+
+type ResourceClaim struct {
+	Name      string
+	UID       string
+	CreatedAt time.Time
 }
 
 // TODO: Add namespace parameter
@@ -49,7 +55,7 @@ func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*R
 
 	// Watch for resource claims in the all namespaces (last parameter)
 	// and store them in cache
-	store := poolboy.WatchResourceResources(poolboyClientSet, "")
+	store := poolboy.WatchResources(poolboyClientSet, "")
 
 	return &ResourceClaimsController{
 		clientSet: poolboyClientSet,
@@ -57,7 +63,7 @@ func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*R
 	}, nil
 }
 
-func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimParameters) error {
+func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimParameters) (ResourceClaim, error) {
 	rc := &v1.ResourceClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: parameters.Name,
@@ -71,19 +77,22 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 					EndTimeStamp:   parameters.Stop.UTC().Format(time.RFC3339),
 				},
 			},
-			Lifespan: v1.ResourceClaimLifespan{
-				End: parameters.End.UTC().Format(time.RFC3339),
-			},
+			// Lifespan: v1.ResourceClaimLifespan{
+			// 	End: parameters.End.UTC().Format(time.RFC3339),
+			// },
 		},
 	}
 
-	_, err := c.clientSet.ResourceClaims(parameters.Namespace).Create(rc)
+	ret, err := c.clientSet.ResourceClaims(parameters.Namespace).Create(rc)
 	if err != nil {
-		return err
+		return ResourceClaim{}, err
 	}
 
-	return nil
-
+	return ResourceClaim{
+		Name:      ret.Name,
+		UID:       string(ret.ObjectMeta.UID),
+		CreatedAt: ret.ObjectMeta.CreationTimestamp.Time.UTC(),
+	}, nil
 }
 
 func (c *ResourceClaimsController) DeleteResourceClaim(namespace string, name string) error {
