@@ -46,21 +46,14 @@ func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request List
 func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCatalogItemRequestObject) (GetCatalogItemResponseObject, error) {
 	catalogItem, ok, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
-		return GetCatalogItemDefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}}, nil
+		return GetCatalogItem500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
 
 	if !ok {
-		return GetCatalogItemDefaultJSONResponse{
-			StatusCode: http.StatusNotFound,
-			Body: Error{
-				Code:    http.StatusNotFound,
-				Message: "Not Found",
-			}}, nil
+		return GetCatalogItem404Response{}, nil
 	}
 
 	return GetCatalogItem200JSONResponse(CatalogItem{
@@ -74,8 +67,6 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 }
 
 func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request CreateProvisionRequestObject) (CreateProvisionResponseObject, error) {
-	// TODO: Get namespace from environment variable
-	// TODO: Get default time values from CI
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
@@ -86,19 +77,17 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 
 	rcInfo, err := h.rcController.CreateResourceClaim(rc)
 	if err != nil {
-		return CreateProvisionDefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: fmt.Sprintf("Can't start provision %s: %s", request.Body.Name, err.Error()),
-			}}, nil
+		return CreateProvision500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
 
 	return CreateProvision201JSONResponse{
 		Body: ProvisionInfo{
 			Name:      rcInfo.Name,
 			UID:       rcInfo.UID,
-			CreatedAt: &rcInfo.CreatedAt,
+			CreatedAt: rcInfo.CreatedAt,
 		},
 		Headers: CreateProvision201ResponseHeaders{
 			Location: fmt.Sprintf("/provision/%s", rcInfo.Name),
@@ -109,12 +98,10 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {
 	err := h.rcController.DeleteResourceClaim(request.Name)
 	if err != nil {
-		return DeleteProvisionDefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}}, nil
+		return DeleteProvision500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
 
 	return DeleteProvision204Response{}, nil
@@ -123,21 +110,14 @@ func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request Delet
 func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request GetProvisionStatusRequestObject) (GetProvisionStatusResponseObject, error) {
 	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
 	if err != nil {
-		return GetProvisionStatusDefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}}, nil
+		return GetProvisionStatus500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
 
 	if !ok {
-		return GetProvisionStatusDefaultJSONResponse{
-			StatusCode: http.StatusNotFound,
-			Body: Error{
-				Code:    http.StatusNotFound,
-				Message: "Not Found",
-			}}, nil
+		return GetProvisionStatus404Response{}, nil
 	}
 
 	if claimStatus == nil {

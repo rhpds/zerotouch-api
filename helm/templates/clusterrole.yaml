@@ -16,4 +16,14 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - {{ .Values.poolboy.apiGroup }}
+  resources:
+  - resourceclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
 {{- end }}

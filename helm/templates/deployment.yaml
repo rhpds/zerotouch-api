@@ -21,6 +21,9 @@ spec:
       containers:
       - name: zerotouch-api
         image: {{ include "zerotouch-api.image" . | quote }}
+        env:
+        - name: RESOURCECLAIM_NAMESPACE
+          value: {{ include "zerotouch-api.namespaceName" . }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}

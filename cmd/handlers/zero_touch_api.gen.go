@@ -48,9 +48,9 @@ type Error struct {
 
 // ProvisionInfo defines model for ProvisionInfo.
 type ProvisionInfo struct {
-	CreatedAt *time.Time `json:"CreatedAt,omitempty"`
-	Name      string     `json:"Name"`
-	UID       string     `json:"UID"`
+	CreatedAt time.Time `json:"CreatedAt"`
+	Name      string    `json:"Name"`
+	UID       string    `json:"UID"`
 }
 
 // ProvisionParams defines model for ProvisionParams.
@@ -428,18 +428,6 @@ func (response ListCatalogItems200JSONResponse) VisitListCatalogItemsResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type ListCatalogItemsDefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
-
-func (response ListCatalogItemsDefaultJSONResponse) VisitListCatalogItemsResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
-
-	return json.NewEncoder(w).Encode(response.Body)
-}
-
 type GetCatalogItemRequestObject struct {
 	Name string `json:"name"`
 }
@@ -457,16 +445,21 @@ func (response GetCatalogItem200JSONResponse) VisitGetCatalogItemResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetCatalogItemDefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
+type GetCatalogItem404Response struct {
 }
 
-func (response GetCatalogItemDefaultJSONResponse) VisitGetCatalogItemResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
+func (response GetCatalogItem404Response) VisitGetCatalogItemResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
 
-	return json.NewEncoder(w).Encode(response.Body)
+type GetCatalogItem500JSONResponse Error
+
+func (response GetCatalogItem500JSONResponse) VisitGetCatalogItemResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type HealthRequestObject struct {
@@ -510,16 +503,13 @@ func (response CreateProvision201JSONResponse) VisitCreateProvisionResponse(w ht
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type CreateProvisionDefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
+type CreateProvision500JSONResponse Error
 
-func (response CreateProvisionDefaultJSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
+func (response CreateProvision500JSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
+	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response.Body)
+	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteProvisionRequestObject struct {
@@ -538,16 +528,13 @@ func (response DeleteProvision204Response) VisitDeleteProvisionResponse(w http.R
 	return nil
 }
 
-type DeleteProvisionDefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
-}
+type DeleteProvision500JSONResponse Error
 
-func (response DeleteProvisionDefaultJSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
+func (response DeleteProvision500JSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
+	w.WriteHeader(500)
 
-	return json.NewEncoder(w).Encode(response.Body)
+	return json.NewEncoder(w).Encode(response)
 }
 
 type GetProvisionStatusRequestObject struct {
@@ -575,16 +562,21 @@ func (response GetProvisionStatus202Response) VisitGetProvisionStatusResponse(w 
 	return nil
 }
 
-type GetProvisionStatusDefaultJSONResponse struct {
-	Body       Error
-	StatusCode int
+type GetProvisionStatus404Response struct {
 }
 
-func (response GetProvisionStatusDefaultJSONResponse) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(response.StatusCode)
+func (response GetProvisionStatus404Response) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(404)
+	return nil
+}
 
-	return json.NewEncoder(w).Encode(response.Body)
+type GetProvisionStatus500JSONResponse Error
+
+func (response GetProvisionStatus500JSONResponse) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 // StrictServerInterface represents all server handlers.
@@ -798,24 +790,30 @@ func (sh *strictHandler) GetProvisionStatus(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xXS1PkNhD+KyolRy8zCzlszY3AhlD7gILkki0Ojd3Y2tiSIrXZnaLmv6f0MOOHPEMq",
-	"bNWcYNzt7u/rr9UtP/FcNVpJlGT56onbvMIG/L9nQFCr8pKwcT+1URoNCfTGc7S5EZqEku4nrTXyFbdk",
-	"hCz5Juvbf1OmAUp7CatrWH+GBpP2WcO1UY+iQJM0iiLxeJNxg/+0wmDBV1+cTww/RDFAzlM8esnvsi6L",
-	"uv+KObnk741RZlqvXBWeSdGvW3Bm3pbxh1gnLiSdHPPn2EISlmhc8AathXI2UGfO9pCPCTv3FA3P0Qol",
-	"L+WDmtI5MwiExamX9Rl4AYRvSDQJBDu0/PPyfL9eURznuxPuNRho7BTw3k6ad2iNVjZtuyUw/6EEt6T0",
-	"S73T/Adot9g6JDHFzgrdElCbqNBFWoeMG5CFam7D76RDKx2Hc3yAtqZdLp/gu2jaJuliCQj3N4KHOQI1",
-	"gTBJ2IVPVWauIL3DlgQb3kHp+HzhVx94xt/f3Fzd9JL0OIzSukciHq3hUT69vmSkWAMSSmRxCDM3hS0D",
-	"y4BpMMTUA/sLjWJ/qDav2PXVmesgQbXLcfsNyhJN38EFfcOuNEr338nRkmf8EY0NKd8eLY+WjpbSKEEL",
-	"vuInR2+9kwaqPM9Fvl0H/kGJNAX/UVhiUNdD3NxHNuCcLovodtaP5zS2WkkbSn+8XIahKQmlTwNa1yL3",
-	"ERZfbVg6YVe5/0QH6meDD3zFf1pst9oirrRFf59tBQFjYB30GFK5+hD22HNTvxjNLhBhPSTStRK/a8wJ",
-	"C4bRJ+O2bRow612FJSit67/h8zv39kCyxZOEBjezyl0gMRhEZ/drFufMUL0L7Ivnm8RAg4TGIRkHHoSM",
-	"8YQzuNbiGZd+8IY//aNOpsWsV9Xxkbr7nz3z4lY59NaYKrenLSqEmqrZTvjdm1leYf73RPtg5D+w9nEc",
-	"z5R9wHyEtON8WjRCRq66W3t+viub4BvuMkziN7b1HvMOTtc9u+tUtPSrKtavxn18jUkU4dmFFUggauuW",
-	"Re7RTY7PZiLT29eH6i+ICaDxisgzXiEUfjY88Y8qJEtsjmhxm42qqRzzg2BzQGdxppe6znwumkM+atDe",
-	"gC6wRkrc8s/RklHrbWg3omVqRJ/7CP123Tmjt00lf+SA/mVK6bNiZ1GwA5JxUuh5DbP5dbqVKVwXZ9W6",
-	"QBpfzw9DsOXrj4vd4z3jx8vjxJ04z1G7YXJga3es8I6j7t5F89jJ2Zqar3hFpFeLRa1yqCtlafVu+W7J",
-	"nRAxTKKtSMiSuU8H9w3pUsO9amlyL4xNMHy8ycYBP7nPDBcR5aMwSjYoe7TCx1UMNWA0jeS3rrAU+nr7",
-	"WtjGm7vNvwEAAP//7VfrN2sSAAA=",
+	"H4sIAAAAAAAC/9RYTW/bOBD9KwR3j5Ytf6RxfMsmbRr0I0bcHrZFDmNpZLGVSJUcJTUC//cFKTn6dNLu",
+	"pkD3ZFskH2feexoOfc8DlWZKoiTDF/fcBDGm4L6eAUGiNpeEqf2ZaZWhJoFu8BxNoEVGQkn7E79DmiXI",
+	"F3yp1a0wQkkGMmSQk0rBzmKBkqRVkqBmmVZfMCB2JyhmIJkFBlKaCWkIkgTDIR9w2mYW0JAWcsN3g/qe",
+	"r5ROgZo7x5QmvcuEyRLYvocUmwveLl8u2DWG7DUQO5VGrBNkp1XEywQoUjqtPzt7yKJvq+4em4xwaGLQ",
+	"GHp3Sn9NFIRekqFXMeNVzAwzrcI+YMdqiLoJfv36fNk3W4TNefNjnEwwmnoRzNfeDOZjb772fW8dTcNx",
+	"sPbHLyZRF2c34Bq/5UJjyBefLWiZYJPShi68T6Va+DcPu6i1tYCN9qXWSncdFqjQcRnWnVZMZm5sUGV4",
+	"5PsDHpWe4ELSdFLlIyThBrXdKkVjYHMQdj9cQ+aXklBLSNgK9S1qVkT7FFllgHvAvrQfXpRLGalu+mca",
+	"gTA8bZl84k+mnj/3xkcf/PFiMl3Mjj7xWu4hEHoknC4/YE9CQ86K3ng+XMN6myjpYZrR1royEpuDjvx4",
+	"ed6EOp6GPsLsyIv8IPJm4fqFdwJj3zs+ngRzH/2T8fTkSd5KR1nwQY2CR/lbgobUdBnsz/bnstwbtx/L",
+	"/CRYrjNlWjgf0JAd75m/ItDPKf+KVHYA7sVPw/UL1+CrynifSxnDo3KuCCjvkfOi47j5yST+1peoBhmq",
+	"dFX8biz59vFsnV3kd5u74O88etW7OJc243OMIE9a9M/iR1a8g+8izdNWjL0rDAG1fGBIZRmGTxJ9Ubwb",
+	"jRQ7QXdi2m/Zx/whwmvFsjeBYg1Km/JnfvWGD/jL6+ura7tJlZd73k2pFYV9JMo62KzMp8tLRoqlIGGD",
+	"rOxJmG1KDAPDgGWgiamIfUKt2AeVBzFbXp3ZTQW5CFZ3sNmgrk+woB67ylDab9Ohzwf8FrUpthwP/aFv",
+	"s1QZSsgEX/DpcOwmZUCxS3sUVN2Re7BB6gb/VhhikCTNuLlD1u7wvwzLaWd1PCu5yZQ0hRIT3y9OREko",
+	"3TaQZYkIHMLoiyl6sKJ1s9/EPqg/NUZ8wf8YVU3eqOzwRvX2rhIEtIZtoUczlVUeBGhMlCfsIXinpMnT",
+	"FPT2sWwJNsZ6pPn8xq5u8Di6l5Di7iCdF0gMGuhsvWVlrWlSeoF1Rp1yGlIk1DaSNnADssQTdsDqzQdc",
+	"uvJffNRfR9I5DmrEt31+8x+F/GH9unpdvbGqzvxZl8ZGtlIRi1QuQzv96BnjKxqlnsj6O6qmlbpKP2Gj",
+	"GCGh+KBzXrthFsQYfO14pRjkv1CrssT+u9eqFfuehdMwFbLMPtsfnq6KK9PDQNFMMYl3rJrdZqKYtKyN",
+	"W6+job9UuH02NtqdWw8t1S0yRAKRGHsGBC66zgu46wg3fv5QXZPeE2jZo/IBjxFCV13u+VtVbNZzIJQj",
+	"9sCiuCvH4VKy+51ezwNm2lvzgTUbesuhtRofYoLUcxk7R0NabStoW+VlX5U/dwh1vz5a5itXyV9Z43tK",
+	"7nvl/jmwqv1OOnaYPizi4PCRXOlUtIUH5bpAarf5v4di/vMXjMMlvziZJ/6ky2axiJUCubN5a0/CWxAJ",
+	"rBNkkdKMYmFqiv3PT/m2eR4pI3atAyuckuvE/etH2WI0SlQASawMLeb+3OdW4xKmx7H2ws3sdUOX/+rB",
+	"WuXUaVtLfzUf7wZtwHf2amIRUd4KrWSKspZWcT8roRoZdZHckS4MlW3Aw7LiqN/d7P4JAAD//ytIm46u",
+	"FQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

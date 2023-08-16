@@ -12,7 +12,7 @@ GET {{baseUrl}}/health
 GET {{baseUrl}}/catalogItems
 
 ### Get CatalogItem by ID
-GET {{baseUrl}}/catalogItems/gpte.shared-workload-lpe-automation-controller.prod
+GET {{baseUrl}}/catalogItems/sandboxes-gpte.ocp4-dil-streaming-wksp.dev
 
 ### Start Provision
 POST {{baseUrl}}/provision
@@ -20,7 +20,7 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "Name": "test-auto-14.babylon-empty-config.prod",
+    "Name": "test-auto-20.babylon-empty-config.prod",
     "ProviderName": "tests.babylon-empty-config.prod",
     "Purpose": "Testing",
     "Start": "2023-08-15T01:23:45Z",
@@ -28,7 +28,7 @@ Accept: application/json
 }
 
 ### Get Provision status
-GET {{baseUrl}}/provision/test-auto-14.babylon-empty-config.prod
+GET {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod
 
 ### Delete Provision
-DELETE {{baseUrl}}/provision/test-auto-4.babylon-empty-config.prod
+DELETE {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod

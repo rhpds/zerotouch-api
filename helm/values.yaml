@@ -40,6 +40,9 @@ serviceAccount:
 babylon:
   apiGroup: babylon.gpte.redhat.com
 
+poolboy:
+  apiGroup: poolboy.gpte.redhat.com
+
 resources:
   limits:
     cpu: 1
