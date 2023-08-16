@@ -65,21 +65,18 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 		log.Logger.Info("Using KUBECONFIG: " + kuebeconfig)
 	}
 
-	// Create an instance of the API handler that satisfies the generated interface
-	// catalogItemRepo := models.NewCatalogItemRepo()
-	// itemsLoaded, err := catalogItemRepo.Refresh(kuebeconfig)
-	// if err != nil {
-	// 	log.Err.Fatal("Error loading catalog items", err)
-	// }
-
-	// log.Logger.Info("Loaded " + strconv.Itoa(itemsLoaded) + " catalog items")
+	rcNamespace := os.Getenv("RESOURCECLAIM_NAMESPACE")
+	if rcNamespace == "" {
+		log.Err.Fatal("RESOURCECLAIM_NAMESPACE not set, exiting")
+	}
+	log.Logger.Info("Using RESOURCECLAIM_NAMESPACE: " + rcNamespace)
 
 	catalogItemsController, err := models.NewCatalogItemsController(kuebeconfig, context.Background(), "")
 	if err != nil {
 		log.Err.Fatal("Error creating catalog items controller", err)
 	}
 
-	resourceClaimsController, err := models.NewResourceClaimsController(kuebeconfig, context.Background())
+	resourceClaimsController, err := models.NewResourceClaimsController(kuebeconfig, rcNamespace, context.Background())
 	if err != nil {
 		log.Err.Fatal("Error creating resource claims controller", err)
 	}

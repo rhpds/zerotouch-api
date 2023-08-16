@@ -15,16 +15,15 @@ import (
 type ResourceClaimsController struct {
 	clientSet *poolboy.PoolboyResourcesClient
 	store     cache.Store
+	namespace string
 }
 
 type ResourceClaimParameters struct {
 	Name         string
-	Namespace    string
 	ProviderName string
 	Purpose      string
 	Start        time.Time
 	Stop         time.Time
-	// End          time.Time
 }
 
 type ResourceClaimStatus struct {
@@ -41,8 +40,7 @@ type ResourceClaim struct {
 	CreatedAt time.Time
 }
 
-// TODO: Add namespace parameter
-func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*ResourceClaimsController, error) {
+func NewResourceClaimsController(kubeconfigPath string, namespace string, ctx context.Context) (*ResourceClaimsController, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
@@ -60,6 +58,7 @@ func NewResourceClaimsController(kubeconfigPath string, ctx context.Context) (*R
 	return &ResourceClaimsController{
 		clientSet: poolboyClientSet,
 		store:     store,
+		namespace: namespace,
 	}, nil
 }
 
@@ -80,7 +79,7 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 		},
 	}
 
-	ret, err := c.clientSet.ResourceClaims(parameters.Namespace).Create(rc)
+	ret, err := c.clientSet.ResourceClaims(c.namespace).Create(rc)
 	if err != nil {
 		return ResourceClaim{}, err
 	}
@@ -92,13 +91,13 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 	}, nil
 }
 
-func (c *ResourceClaimsController) DeleteResourceClaim(namespace string, name string) error {
-	return c.clientSet.ResourceClaims(namespace).Delete(name, &metav1.DeleteOptions{})
+func (c *ResourceClaimsController) DeleteResourceClaim(name string) error {
+	return c.clientSet.ResourceClaims(c.namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
-func (c *ResourceClaimsController) GetResourceClaimStatus(namespace string, name string) (*ResourceClaimStatus, bool, error) {
+func (c *ResourceClaimsController) GetResourceClaimStatus(name string) (*ResourceClaimStatus, bool, error) {
 
-	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", namespace, name))
+	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
 	if err != nil || !ok {
 		return nil, ok, err
 	}

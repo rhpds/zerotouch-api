@@ -78,7 +78,6 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 	// TODO: Get default time values from CI
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
-		Namespace:    "user-kmalgich-redhat-com",
 		ProviderName: request.Body.ProviderName,
 		Purpose:      request.Body.Purpose,
 		Start:        request.Body.Start,
@@ -108,7 +107,7 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 }
 
 func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {
-	err := h.rcController.DeleteResourceClaim("user-kmalgich-redhat-com", request.Name)
+	err := h.rcController.DeleteResourceClaim(request.Name)
 	if err != nil {
 		return DeleteProvisionDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
@@ -122,7 +121,7 @@ func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request Delet
 }
 
 func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request GetProvisionStatusRequestObject) (GetProvisionStatusResponseObject, error) {
-	claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", request.Name)
+	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
 	if err != nil {
 		return GetProvisionStatusDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
