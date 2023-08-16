@@ -71,9 +71,9 @@ func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
 }
 
 // Key is a string that uniquely identifies a CatalogItem in a store
-// and this is a string "namespace/name". We need to find the key
-// because currently all we have is the name. and we need to extract namespace.
-// TODO: check if we can update UI implementation to provide us namespace.
+// and this is a string in "namespace/name" format. We need to "build" the key
+// because currently all we have is the name, and we need to extract namespace
+// from the keys array.
 func (c *CatalogItemsController) findKey(name string) string {
 	keys := c.store.ListKeys()
 	for _, key := range keys {

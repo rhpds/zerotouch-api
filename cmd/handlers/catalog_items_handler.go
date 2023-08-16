@@ -16,9 +16,9 @@ type CatalogItemsHandler struct {
 // Make sure we conform to the StrictServer interface
 var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 
-func NewCatalogItemsHandler(catalogItemsControler *models.CatalogItemsController, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
+func NewCatalogItemsHandler(catalogItemsController *models.CatalogItemsController, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
-		catalogItemsController: catalogItemsControler,
+		catalogItemsController: catalogItemsController,
 		rcController:           rcController,
 	}
 }
@@ -46,7 +46,7 @@ func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request List
 func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCatalogItemRequestObject) (GetCatalogItemResponseObject, error) {
 	catalogItem, ok, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
-		return GetCatalogItemdefaultJSONResponse{
+		return GetCatalogItemDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body: Error{
 				Code:    http.StatusInternalServerError,
@@ -55,7 +55,7 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 	}
 
 	if !ok {
-		return GetCatalogItemdefaultJSONResponse{
+		return GetCatalogItemDefaultJSONResponse{
 			StatusCode: http.StatusNotFound,
 			Body: Error{
 				Code:    http.StatusNotFound,
@@ -87,7 +87,7 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 
 	rcInfo, err := h.rcController.CreateResourceClaim(rc)
 	if err != nil {
-		return CreateProvisiondefaultJSONResponse{
+		return CreateProvisionDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body: Error{
 				Code:    http.StatusInternalServerError,
@@ -110,7 +110,7 @@ func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request Creat
 func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {
 	err := h.rcController.DeleteResourceClaim("user-kmalgich-redhat-com", request.Name)
 	if err != nil {
-		return DeleteProvisiondefaultJSONResponse{
+		return DeleteProvisionDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body: Error{
 				Code:    http.StatusInternalServerError,
@@ -124,7 +124,7 @@ func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request Delet
 func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request GetProvisionStatusRequestObject) (GetProvisionStatusResponseObject, error) {
 	claimStatus, ok, err := h.rcController.GetResourceClaimStatus("user-kmalgich-redhat-com", request.Name)
 	if err != nil {
-		return GetProvisionStatusdefaultJSONResponse{
+		return GetProvisionStatusDefaultJSONResponse{
 			StatusCode: http.StatusInternalServerError,
 			Body: Error{
 				Code:    http.StatusInternalServerError,
@@ -133,12 +133,16 @@ func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request Ge
 	}
 
 	if !ok {
-		return GetProvisionStatusdefaultJSONResponse{
+		return GetProvisionStatusDefaultJSONResponse{
 			StatusCode: http.StatusNotFound,
 			Body: Error{
 				Code:    http.StatusNotFound,
 				Message: "Not Found",
 			}}, nil
+	}
+
+	if claimStatus == nil {
+		return GetProvisionStatus202Response{}, nil
 	}
 
 	return GetProvisionStatus200JSONResponse(ProvisionStatus{

@@ -148,7 +148,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CatalogItem'
-        default:
+        Default:
           description: unexpected error
           content:
             application/json:
@@ -176,7 +176,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CatalogItem'
-        default:
+        Default:
           description: unexpected error
           content:
             application/json:
@@ -208,7 +208,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProvisionInfo'
-        default:
+        Default:
           description: unexpected error
           content:
             application/json:
@@ -235,7 +235,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProvisionStatus'
-        default:
+        '202':
+          description: Accepted
+        Default:
           description: unexpected error
           content:
             application/json:
@@ -257,7 +259,7 @@ paths:
       responses:
         '204':
           description: No Content
-        default:
+        Default:
           description: unexpected error
           content:
             application/json:

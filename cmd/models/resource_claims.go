@@ -77,9 +77,6 @@ func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimP
 					EndTimeStamp:   parameters.Stop.UTC().Format(time.RFC3339),
 				},
 			},
-			// Lifespan: v1.ResourceClaimLifespan{
-			// 	End: parameters.End.UTC().Format(time.RFC3339),
-			// },
 		},
 	}
 
@@ -107,6 +104,11 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(namespace string, name
 	}
 
 	rc := item.(*v1.ResourceClaim)
+
+	// Status is not available yet
+	if (v1.ResourceClaimStatusSummary{}) == rc.Status.Summary {
+		return nil, ok, nil
+	}
 
 	return &ResourceClaimStatus{
 		GUID:           rc.Status.Summary.ProvisionData.GUID,

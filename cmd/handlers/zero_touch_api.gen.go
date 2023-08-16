@@ -428,12 +428,12 @@ func (response ListCatalogItems200JSONResponse) VisitListCatalogItemsResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type ListCatalogItemsdefaultJSONResponse struct {
+type ListCatalogItemsDefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response ListCatalogItemsdefaultJSONResponse) VisitListCatalogItemsResponse(w http.ResponseWriter) error {
+func (response ListCatalogItemsDefaultJSONResponse) VisitListCatalogItemsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -457,12 +457,12 @@ func (response GetCatalogItem200JSONResponse) VisitGetCatalogItemResponse(w http
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetCatalogItemdefaultJSONResponse struct {
+type GetCatalogItemDefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response GetCatalogItemdefaultJSONResponse) VisitGetCatalogItemResponse(w http.ResponseWriter) error {
+func (response GetCatalogItemDefaultJSONResponse) VisitGetCatalogItemResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -510,12 +510,12 @@ func (response CreateProvision201JSONResponse) VisitCreateProvisionResponse(w ht
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type CreateProvisiondefaultJSONResponse struct {
+type CreateProvisionDefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response CreateProvisiondefaultJSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
+func (response CreateProvisionDefaultJSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -538,12 +538,12 @@ func (response DeleteProvision204Response) VisitDeleteProvisionResponse(w http.R
 	return nil
 }
 
-type DeleteProvisiondefaultJSONResponse struct {
+type DeleteProvisionDefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response DeleteProvisiondefaultJSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
+func (response DeleteProvisionDefaultJSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -567,12 +567,20 @@ func (response GetProvisionStatus200JSONResponse) VisitGetProvisionStatusRespons
 	return json.NewEncoder(w).Encode(response)
 }
 
-type GetProvisionStatusdefaultJSONResponse struct {
+type GetProvisionStatus202Response struct {
+}
+
+func (response GetProvisionStatus202Response) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type GetProvisionStatusDefaultJSONResponse struct {
 	Body       Error
 	StatusCode int
 }
 
-func (response GetProvisionStatusdefaultJSONResponse) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
+func (response GetProvisionStatusDefaultJSONResponse) VisitGetProvisionStatusResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(response.StatusCode)
 
@@ -790,24 +798,24 @@ func (sh *strictHandler) GetProvisionStatus(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xXTXPjNgz9Kxy2R23sbHrY8S21t6lnP+yJ20t3ckAkWOJWIlUSyq4n4//eIUXZ+qDs",
-	"dJqd8SmxAAHv4YEA9cxjVZRKoiTDZ8/cxBkW4P6dA0Gu0iVhYX+WWpWoSaAzLtDEWpQklLQ/aVcin3FD",
-	"WsiU76O2/TelC6CwlzBlDrvPUGDQPmpYa/UkEtRBo0gCj/cR1/hPJTQmfPbF+vjwXRQd5DzEo5X8IWqy",
-	"qMevGJNN/l5rpYf1ilXimCTtutXOzNkivvV14kLSzVt+iC0kYYraBi/QGEhHAzXm6Ax5n7BxD9FwHI1Q",
-	"cim3akhnrhEIk1sn6wF4AoRvSBQBBCe0/HO5OK+XF8f6noS7Bg2FGQI+20njDpUulQnbNgT6P5RgQ6p8",
-	"qXeYfwftEVuDxKc4WaENAVWBCt2FdYi4BpmoYlP/DjpU0nJY4BaqnE65fILvoqiKoIshIDzfCA5mD9QA",
-	"wiBhEz5UmbGCtA5bEGz9DkrL5wtffeARf39/v7pvJWlx6KW1j4Q/Wt2jfLteMlKsAAkpMj+EmZ3ChoFh",
-	"wErQxNSW/YVasT9UFWdsvZrbDhKU2xybb5CmqNsONugbtipR2v9urqY84k+oTZ3y+mp6NbW0VIkSSsFn",
-	"/Obq2jmVQJnjOYmP68A9SJGG4D8KQwzyvIubu8garNMy8W7zdjyrsSmVNHXp306n9dCUhNKlgbLMRewi",
-	"TL6aeunUu8r+JxpQP2vc8hn/aXLcahO/0ibtfXYUBLSGXa1Hl8rqA3fPDk39YjSnQNTrIZCukvi9xJgw",
-	"Yeh9Im6qogC9O1VYgtTY/us+f7BvdySbPEsocD+q3B0Sg0509rhjfs501bvDtniuSTQUSKgtkn7gTkgf",
-	"T1iDbS0ecekGb/2nfdRJVxi1qto/Ug//s2de3CqX3hpD5c60RYaQUzbaCb87M4szjP8eaF8b+Q+svR/H",
-	"I2XvMO8hbTjfJoWQnmvZrD0335UJ8K3vMkziN3b07vOundYtu+1UNPSrSnavxr1/jQkU4eDCEiQQubHL",
-	"InboBsdnP5Dp+vWhugtiAKi/IvKIZwiJmw3P/KOqkwU2h7fYzUbZUI7xQbC/oLM40ktNZx6KZpH3GrQ1",
-	"oBPMkQK3/AUa0mp3DG1HtAyN6IWL0G7XkzP62FTyRw7oX4aUPis294JdkIyDQo9rGI2v06NM9XVxVK07",
-	"pP71/DIEm77+uDg93i9rq/YFPHGS7buonxq1Kp3zGc+IytlkkqsY8kwZmr2bvptyW2cfJtA1JGTK7JeB",
-	"/US0qeFRVTS49nmNu4/3UT/gJ/sVYSOifBJayQJli1b97eRDdRgNI7mlKgzVbXt8rV62+4f9vwEAAP//",
-	"bAJfF0oSAAA=",
+	"H4sIAAAAAAAC/8xXS1PkNhD+KyolRy8zCzlszY3AhlD7gILkki0Ojd3Y2tiSIrXZnaLmv6f0MOOHPEMq",
+	"bNWcYNzt7u/rr9UtP/FcNVpJlGT56onbvMIG/L9nQFCr8pKwcT+1URoNCfTGc7S5EZqEku4nrTXyFbdk",
+	"hCz5Juvbf1OmAUp7CatrWH+GBpP2WcO1UY+iQJM0iiLxeJNxg/+0wmDBV1+cTww/RDFAzlM8esnvsi6L",
+	"uv+KObnk741RZlqvXBWeSdGvW3Bm3pbxh1gnLiSdHPPn2EISlmhc8AathXI2UGfO9pCPCTv3FA3P0Qol",
+	"L+WDmtI5MwiExamX9Rl4AYRvSDQJBDu0/PPyfL9eURznuxPuNRho7BTw3k6ad2iNVjZtuyUw/6EEt6T0",
+	"S73T/Adot9g6JDHFzgrdElCbqNBFWoeMG5CFam7D76RDKx2Hc3yAtqZdLp/gu2jaJuliCQj3N4KHOQI1",
+	"gTBJ2IVPVWauIL3DlgQb3kHp+HzhVx94xt/f3Fzd9JL0OIzSukciHq3hUT69vmSkWAMSSmRxCDM3hS0D",
+	"y4BpMMTUA/sLjWJ/qDav2PXVmesgQbXLcfsNyhJN38EFfcOuNEr338nRkmf8EY0NKd8eLY+WjpbSKEEL",
+	"vuInR2+9kwaqPM9Fvl0H/kGJNAX/UVhiUNdD3NxHNuCcLovodtaP5zS2WkkbSn+8XIahKQmlTwNa1yL3",
+	"ERZfbVg6YVe5/0QH6meDD3zFf1pst9oirrRFf59tBQFjYB30GFK5+hD22HNTvxjNLhBhPSTStRK/a8wJ",
+	"C4bRJ+O2bRow612FJSit67/h8zv39kCyxZOEBjezyl0gMRhEZ/drFufMUL0L7Ivnm8RAg4TGIRkHHoSM",
+	"8YQzuNbiGZd+8IY//aNOpsWsV9Xxkbr7nz3z4lY59NaYKrenLSqEmqrZTvjdm1leYf73RPtg5D+w9nEc",
+	"z5R9wHyEtON8WjRCRq66W3t+viub4BvuMkziN7b1HvMOTtc9u+tUtPSrKtavxn18jUkU4dmFFUggauuW",
+	"Re7RTY7PZiLT29eH6i+ICaDxisgzXiEUfjY88Y8qJEtsjmhxm42qqRzzg2BzQGdxppe6znwumkM+atDe",
+	"gC6wRkrc8s/RklHrbWg3omVqRJ/7CP123Tmjt00lf+SA/mVK6bNiZ1GwA5JxUuh5DbP5dbqVKVwXZ9W6",
+	"QBpfzw9DsOXrj4vd4z3jx8vjxJ04z1G7YXJga3es8I6j7t5F89jJ2Zqar3hFpFeLRa1yqCtlafVu+W7J",
+	"nRAxTKKtSMiSuU8H9w3pUsO9amlyL4xNMHy8ycYBP7nPDBcR5aMwSjYoe7TCx1UMNWA0jeS3rrAU+nr7",
+	"WtjGm7vNvwEAAP//7VfrN2sSAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
