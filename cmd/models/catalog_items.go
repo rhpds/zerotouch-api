@@ -2,22 +2,26 @@ package models
 
 import (
 	"context"
-	"errors"
+	"strings"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/api/types"
-	"k8s.io/apiextensions-apiserver/examples/client-go/pkg/client/clientset/versioned/scheme"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
-	"k8s.io/client-go/rest"
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
+	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/babylon"
+	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-const (
-	error_not_found = "not found"
-)
+// const (
+// 	error_not_found = "not found"
+// )
+
+type CatalogItemsController struct {
+	clientSet *babylon.BabylonResourcesClient
+	store     cache.Store
+}
 
 type CatalogItemInfo struct {
 	Name              string
+	NameSpace         string
 	DisplayName       string
 	Description       string
 	DescriptionFormat string
@@ -25,83 +29,76 @@ type CatalogItemInfo struct {
 	Provider          string
 }
 
-type CatalogItemRepo struct {
-	catalogItems map[string]CatalogItemInfo
-}
-
-func NewCatalogItemRepo() *CatalogItemRepo {
-	return &CatalogItemRepo{
-		catalogItems: make(map[string]CatalogItemInfo),
-	}
-}
-
-// TODO: add pagination
-func (c *CatalogItemRepo) ListAll() ([]CatalogItemInfo, error) {
-	r := make([]CatalogItemInfo, 0, len(c.catalogItems))
-	for _, v := range c.catalogItems {
-		r = append(r, v)
-	}
-
-	return r, nil
-}
-
-func (c *CatalogItemRepo) GetByName(name string) (CatalogItemInfo, error) {
-	item, ok := c.catalogItems[name]
-	if !ok {
-		return CatalogItemInfo{}, errors.New(error_not_found)
-	}
-
-	return item, nil
-}
-
-func (c *CatalogItemRepo) Refresh(kubeconfig string) (int, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
-
+func NewCatalogItemsController(kubeconfigPath string, ctx context.Context, namespace string) (*CatalogItemsController, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	v1.AddToScheme(scheme.Scheme)
-
-	crdConfig := *config
-	crdConfig.ContentConfig.GroupVersion = &schema.GroupVersion{Group: v1.GroupName, Version: v1.GroupVersion}
-	crdConfig.APIPath = "/apis"
-	crdConfig.NegotiatedSerializer = serializer.NewCodecFactory(scheme.Scheme)
-	crdConfig.UserAgent = rest.DefaultKubernetesUserAgent()
-
-	restClent, err := rest.UnversionedRESTClientFor(&crdConfig)
+	babylonClientSet, err := babylon.NewForConfig(config, ctx)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	result := v1.CatalogItemList{}
-	//TODO: Remove hardcoded resource
-	err = restClent.
-		Get().
-		Resource("catalogitems").
-		Do(context.Background()).
-		Into(&result)
+	store := babylon.WatchResources(babylonClientSet, namespace)
 
-	if err != nil {
-		return 0, err
+	return &CatalogItemsController{
+		clientSet: babylonClientSet,
+		store:     store,
+	}, nil
+}
+
+func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
+	items := c.store.List()
+	r := make([]CatalogItemInfo, 0, len(items))
+	for _, item := range items {
+		catalogItem := item.(*v1.CatalogItem)
+		anotations := catalogItem.ObjectMeta.Annotations
+		labels := catalogItem.ObjectMeta.Labels
+
+		r = append(r, CatalogItemInfo{
+			Name:              catalogItem.ObjectMeta.Name,
+			NameSpace:         catalogItem.ObjectMeta.Namespace,
+			DisplayName:       anotations["babylon.gpte.redhat.com/displayName"],
+			Description:       anotations["babylon.gpte.redhat.com/description"],
+			DescriptionFormat: anotations["babylon.gpte.redhat.com/descriptionFormat"],
+			Id:                labels["gpte.redhat.com/asset-uuid"],
+			Provider:          labels["babylon.gpte.redhat.com/Provider"],
+		})
 	}
 
-	for item := range result.Items {
+	return r
+}
 
-		var info CatalogItemInfo
-		info.Id = string(result.Items[item].ObjectMeta.UID)
-		info.Name = result.Items[item].ObjectMeta.Name
+// Key is a string that uniquely identifies a CatalogItem in a store
+// and this is a string in "namespace/name" format. We need to "build" the key
+// because currently all we have is the name, and we need to extract namespace
+// from the keys array.
+func (c *CatalogItemsController) findKey(name string) string {
+	keys := c.store.ListKeys()
+	for _, key := range keys {
+		if strings.Contains(strings.ToLower(key), strings.ToLower(name)) {
+			return key
+		}
+	}
+	return ""
+}
 
-		annotations := result.Items[item].ObjectMeta.Annotations
-		info.DisplayName = annotations["babylon.gpte.redhat.com/displayName"]
-		info.Description = annotations["babylon.gpte.redhat.com/description"]
-		info.DescriptionFormat = annotations["babylon.gpte.redhat.com/descriptionFormat"]
+func (c *CatalogItemsController) GetByName(name string) (CatalogItemInfo, bool, error) {
+	key := c.findKey(name)
 
-		labels := result.Items[item].ObjectMeta.Labels
-		info.Provider = labels["babylon.gpte.redhat.com/Provider"]
-
-		c.catalogItems[info.Name] = info
+	item, ok, err := c.store.GetByKey(key)
+	if err != nil || !ok {
+		return CatalogItemInfo{}, false, err
 	}
 
-	return len(c.catalogItems), nil
+	return CatalogItemInfo{
+		Name:              item.(*v1.CatalogItem).ObjectMeta.Name,
+		NameSpace:         item.(*v1.CatalogItem).ObjectMeta.Namespace,
+		DisplayName:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
+		Description:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
+		DescriptionFormat: item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
+		Id:                item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
+		Provider:          item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
+	}, true, nil
 }

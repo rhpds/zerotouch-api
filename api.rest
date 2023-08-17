@@ -3,7 +3,7 @@
 # To use it, install the extension and then open this file in VS Code.
 # You can then send the requests by clicking the "Send Request" link above each request.
 
-@baseUrl = http://localhost:20001
+@baseUrl = http://localhost:8080
 
 ### Get Health
 GET {{baseUrl}}/health
@@ -12,4 +12,23 @@ GET {{baseUrl}}/health
 GET {{baseUrl}}/catalogItems
 
 ### Get CatalogItem by ID
-GET {{baseUrl}}/catalogItems/ztests.test-empty-config.dev
+GET {{baseUrl}}/catalogItems/sandboxes-gpte.ocp4-dil-streaming-wksp.dev
+
+### Start Provision
+POST {{baseUrl}}/provision
+Content-Type: application/json
+Accept: application/json
+
+{
+    "Name": "test-auto-20.babylon-empty-config.prod",
+    "ProviderName": "tests.babylon-empty-config.prod",
+    "Purpose": "Testing",
+    "Start": "2023-08-15T01:23:45Z",
+    "Stop": "2023-08-16T01:23:45Z"
+}
+
+### Get Provision status
+GET {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod
+
+### Delete Provision
+DELETE {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod

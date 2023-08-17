@@ -2,36 +2,30 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/rhpds/zerotouch-api/cmd/models"
 )
 
-// TODO: should contain a reference to the model to retrieve data from K8s API
-// e.g.: CatalogItems
 type CatalogItemsHandler struct {
-	catalogItemRepo *models.CatalogItemRepo
+	catalogItemsController *models.CatalogItemsController
+	rcController           *models.ResourceClaimsController
 }
 
 // Make sure we conform to the StrictServer interface
 var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 
-func NewCatalogItemsHandler(catalogItemRepo *models.CatalogItemRepo) *CatalogItemsHandler {
+func NewCatalogItemsHandler(catalogItemsController *models.CatalogItemsController, rcController *models.ResourceClaimsController) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
-		catalogItemRepo: catalogItemRepo,
+		catalogItemsController: catalogItemsController,
+		rcController:           rcController,
 	}
 }
 
+// TODO: add pagination
 func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request ListCatalogItemsRequestObject) (ListCatalogItemsResponseObject, error) {
-	catalogItemList, err := h.catalogItemRepo.ListAll()
-	if err != nil {
-		return ListCatalogItemsdefaultJSONResponse{
-			StatusCode: http.StatusInternalServerError,
-			Body: Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}}, nil
-	}
+	catalogItemList := h.catalogItemsController.ListAll()
 
 	items := make([]CatalogItem, 0, len(catalogItemList))
 	for _, v := range catalogItemList {
@@ -50,14 +44,16 @@ func (h *CatalogItemsHandler) ListCatalogItems(ctx context.Context, request List
 }
 
 func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCatalogItemRequestObject) (GetCatalogItemResponseObject, error) {
-	catalogItem, err := h.catalogItemRepo.GetByName(request.Name)
+	catalogItem, ok, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
-		return GetCatalogItemdefaultJSONResponse{
-			StatusCode: http.StatusNotFound,
-			Body: Error{
-				Code:    http.StatusNotFound,
-				Message: err.Error(),
-			}}, nil
+		return GetCatalogItem500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	if !ok {
+		return GetCatalogItem404Response{}, nil
 	}
 
 	return GetCatalogItem200JSONResponse(CatalogItem{
@@ -68,6 +64,74 @@ func (h *CatalogItemsHandler) GetCatalogItem(ctx context.Context, request GetCat
 		Id:                catalogItem.Id,
 		Provider:          catalogItem.Provider,
 	}), nil
+}
+
+func (h *CatalogItemsHandler) CreateProvision(ctx context.Context, request CreateProvisionRequestObject) (CreateProvisionResponseObject, error) {
+	rc := models.ResourceClaimParameters{
+		Name:         request.Body.Name,
+		ProviderName: request.Body.ProviderName,
+		Purpose:      request.Body.Purpose,
+		Start:        request.Body.Start,
+		Stop:         request.Body.Stop,
+	}
+
+	rcInfo, err := h.rcController.CreateResourceClaim(rc)
+	if err != nil {
+		return CreateProvision500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	return CreateProvision201JSONResponse{
+		Body: ProvisionInfo{
+			Name:      rcInfo.Name,
+			UID:       rcInfo.UID,
+			CreatedAt: rcInfo.CreatedAt,
+		},
+		Headers: CreateProvision201ResponseHeaders{
+			Location: fmt.Sprintf("/provision/%s", rcInfo.Name),
+		},
+	}, nil
+}
+
+func (h *CatalogItemsHandler) DeleteProvision(ctx context.Context, request DeleteProvisionRequestObject) (DeleteProvisionResponseObject, error) {
+	err := h.rcController.DeleteResourceClaim(request.Name)
+	if err != nil {
+		return DeleteProvision500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	return DeleteProvision204Response{}, nil
+}
+
+func (h *CatalogItemsHandler) GetProvisionStatus(ctx context.Context, request GetProvisionStatusRequestObject) (GetProvisionStatusResponseObject, error) {
+	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
+	if err != nil {
+		return GetProvisionStatus500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	if !ok {
+		return GetProvisionStatus404Response{}, nil
+	}
+
+	if claimStatus == nil {
+		return GetProvisionStatus202Response{}, nil
+	}
+
+	return GetProvisionStatus200JSONResponse(ProvisionStatus{
+		State:          claimStatus.State,
+		GUID:           claimStatus.GUID,
+		RandomString:   claimStatus.RandomString,
+		RuntimeDefault: claimStatus.RuntimeDefault,
+		RuntimeMaximum: claimStatus.RuntimeMaximum,
+	}), nil
+
 }
 
 func (h *CatalogItemsHandler) Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error) {

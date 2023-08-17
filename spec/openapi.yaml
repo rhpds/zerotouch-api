@@ -8,63 +8,25 @@ info:
 servers:
   - url: http://localhost:8080
   
-components:
-  schemas:
-    CatalogItem:
-      type: object
-      properties:
-        id:
-          type: string
-        Name:
-          type: string
-        DisplayName:
-          type: string
-        Description:
-          type: string
-        DescriptionFormat:
-          type: string
-        Provider:
-          type: string
-      required:
-        - id
-        - Name
-        - DisplayName
-        - Description
-        - DescriptionFormat
-        - Provider
-    Status:
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - OK
-            - ERROR
-        message:
-          type: string
-    Error:
-      type: object
-      properties:
-        code:
-          type: integer
-          format: int32
-          description: Error code
-        message:
-          type: string
-          description: Error message
-      required:
-        - code
-        - message
+tags:
+  - name: Catalog Items
+    description: Getting information about Catalog Items
+  - name: Provisioning
+    description: Managing environment provisioning
+  - name: Admin
+    description: Administration
 
 paths:
   /health:
     get:
+      tags:
+        - Admin
       summary: Health check
       description: Health check
       operationId: health
       responses:
         '200':
-          description: OK
+          description: Successful operation
           content:
             application/json:
               schema:
@@ -72,27 +34,25 @@ paths:
 
   /catalogItems:
     get:
+      tags:
+        - Catalog Items
       summary: List all Catalog Items
       description: List all Catalog Items
       operationId: listCatalogItems
       responses:
         '200':
-          description: OK
+          description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/CatalogItem'
-        default:
-          description: unexpected error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-                
+
   /catalogItems/{name}:
     get:
+      tags:
+        - Catalog Items
       summary: Get a Catalog Item
       description: Get a Catalog Item by Name
       operationId: getCatalogItem
@@ -110,9 +70,222 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CatalogItem'
-        default:
-          description: unexpected error
+        '404':
+          description: Catalog Item not found
+        '500':
+          description: Internal Server Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /provision:
+    post:
+      tags:
+        - Provisioning
+      summary: Create new provision
+      description: Create new provision
+      operationId: createProvision
+      requestBody:
+        description: Provision details to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvisionParams'
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Location of the new provision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvisionInfo'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /provision/{name}: 
+    get:
+      tags:
+        - Provisioning
+      summary: Get provision status
+      description: Get provision status by name
+      operationId: getProvisionStatus
+      parameters:
+        - name: name
+          in: path
+          description: Provision name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvisionStatus'
+        '202':
+          description: Status summary not yet available for this provision
+        '404':
+          description: Catalog Item not found
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags:
+        - Provisioning
+      summary: Destroy provision
+      description: Destroy provision by name
+      operationId: deleteProvision
+      parameters:
+        - name: name
+          in: path
+          description: Provision name
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CatalogItem:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "87e22ef3-fa8b-4a81-8b00-bf3d1cb0162f"
+        Name:
+          type: string
+          example: "gpte.shared-workload-lpe-automation-controller.prod"
+        DisplayName:
+          type: string
+          example: "LPE: Red Hat Ansible Automation Platform Automation Controller"
+        Description:
+          type: string
+          example: "Provision and automation controller project with an operator installed."
+        DescriptionFormat:
+          type: string
+          example: "html"
+        Provider:
+          type: string
+          example: "RHDP"
+      required:
+        - id
+        - Name
+        - DisplayName
+        - Description
+        - DescriptionFormat
+        - Provider
+    ProvisionParams:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: "test.babylon-empty-config.prod"
+        ProviderName:
+          type: string
+          example: "tests.babylon-empty-config.prod"
+        Purpose:
+          type: string
+          example: "Testing"
+        Start:
+          type: string
+          format: date-time
+          example: "2023-08-15T01:23:45Z"
+        Stop:
+          type: string
+          format: date-time
+          example: "2023-08-16T01:23:45Z"
+      required:
+       - Name
+       - ProviderName
+       - Purpose
+       - Start
+       - Stop
+    ProvisionInfo:
+      type: object
+      properties:
+        Name:
+          type: string
+          example: "test-auto-18.babylon-empty-config.prod"
+        UID:
+          type: string
+          example: "73d0ea45-f0cf-4db6-9a10-772c80e09139"
+        CreatedAt:
+          type: string
+          format: date-time
+          example: "2023-08-15T01:23:45Z"
+      required:
+        - Name
+        - UID
+        - CreatedAt
+    ProvisionStatus:
+      type: object
+      properties:
+        GUID:
+          type: string
+          example: "892hq"
+        randomString:
+          type: string
+          example: "qUCbpGuwgwcYufF"
+        runtimeDefault:
+          type: string
+          example: "4h"
+        runtimeMaximum:
+          type: string
+          example: "8h"
+        state:
+          type: string
+          example: "stopped"
+      required:
+        - GUID
+        - randomString
+        - runtimeDefault
+        - runtimeMaximum
+        - state
+    Status:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - OK
+            - ERROR
+          example: OK
+        message:
+          type: string
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+          example: 500
+        message:
+          type: string
+          description: Error message
+          example: "Internal Server Error"
+      required:
+        - code
+        - message
