@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
-	"github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/poolboy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
+
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
+	"github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/poolboy"
 )
 
 type ResourceClaimsController struct {
@@ -28,6 +29,7 @@ type ResourceClaimParameters struct {
 
 type ResourceClaimStatus struct {
 	GUID           string
+	ShowroomURL    string
 	RandomString   string
 	RuntimeDefault string
 	RuntimeMaximum string
@@ -40,7 +42,11 @@ type ResourceClaim struct {
 	CreatedAt time.Time
 }
 
-func NewResourceClaimsController(kubeconfigPath string, namespace string, ctx context.Context) (*ResourceClaimsController, error) {
+func NewResourceClaimsController(
+	kubeconfigPath string,
+	namespace string,
+	ctx context.Context,
+) (*ResourceClaimsController, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
@@ -62,7 +68,9 @@ func NewResourceClaimsController(kubeconfigPath string, namespace string, ctx co
 	}, nil
 }
 
-func (c *ResourceClaimsController) CreateResourceClaim(parameters ResourceClaimParameters) (ResourceClaim, error) {
+func (c *ResourceClaimsController) CreateResourceClaim(
+	parameters ResourceClaimParameters,
+) (ResourceClaim, error) {
 	rc := &v1.ResourceClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: parameters.Name,
@@ -95,8 +103,9 @@ func (c *ResourceClaimsController) DeleteResourceClaim(name string) error {
 	return c.clientSet.ResourceClaims(c.namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
-func (c *ResourceClaimsController) GetResourceClaimStatus(name string) (*ResourceClaimStatus, bool, error) {
-
+func (c *ResourceClaimsController) GetResourceClaimStatus(
+	name string,
+) (*ResourceClaimStatus, bool, error) {
 	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
 	if err != nil || !ok {
 		return nil, ok, err
@@ -111,6 +120,7 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(name string) (*Resourc
 
 	return &ResourceClaimStatus{
 		GUID:           rc.Status.Summary.ProvisionData.GUID,
+		ShowroomURL:    rc.Status.Summary.ProvisionData.ShowroomURL,
 		RandomString:   rc.Status.Summary.ProvisionData.RandomString,
 		RuntimeDefault: rc.Status.Summary.RuntimeDefault,
 		RuntimeMaximum: rc.Status.Summary.RuntimeMaximum,

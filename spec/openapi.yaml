@@ -4,10 +4,10 @@ info:
   title: Swagger Zero Touch API - OpenAPI 3.0
   description: API to manage Catalog Items as a part of Zero Touch POC
   version: 1.0.0
-  
+
 servers:
   - url: http://localhost:8080
-  
+
 tags:
   - name: Catalog Items
     description: Getting information about Catalog Items
@@ -25,12 +25,12 @@ paths:
       description: Health check
       operationId: health
       responses:
-        '200':
+        "200":
           description: Successful operation
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Status'
+                $ref: "#/components/schemas/Status"
 
   /catalogItems:
     get:
@@ -40,14 +40,14 @@ paths:
       description: List all Catalog Items
       operationId: listCatalogItems
       responses:
-        '200':
+        "200":
           description: Successful operation
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CatalogItem'
+                  $ref: "#/components/schemas/CatalogItem"
 
   /catalogItems/{name}:
     get:
@@ -64,20 +64,20 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogItem'
-        '404':
+                $ref: "#/components/schemas/CatalogItem"
+        "404":
           description: Catalog Item not found
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /provision:
     post:
@@ -92,9 +92,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProvisionParams'
+              $ref: "#/components/schemas/ProvisionParams"
       responses:
-        '201':
+        "201":
           description: Created
           headers:
             Location:
@@ -104,15 +104,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProvisionInfo'
-        '500':
+                $ref: "#/components/schemas/ProvisionInfo"
+        "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
-  /provision/{name}: 
+  /provision/{name}:
     get:
       tags:
         - Provisioning
@@ -127,22 +127,22 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProvisionStatus'
-        '202':
+                $ref: "#/components/schemas/ProvisionStatus"
+        "202":
           description: Status summary not yet available for this provision
-        '404':
+        "404":
           description: Catalog Item not found
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
     delete:
       tags:
         - Provisioning
@@ -157,14 +157,14 @@ paths:
           schema:
             type: string
       responses:
-        '204':
+        "204":
           description: No Content
-        '500':
+        "500":
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
 components:
   schemas:
@@ -217,11 +217,11 @@ components:
           format: date-time
           example: "2023-08-16T01:23:45Z"
       required:
-       - Name
-       - ProviderName
-       - Purpose
-       - Start
-       - Stop
+        - Name
+        - ProviderName
+        - Purpose
+        - Start
+        - Stop
     ProvisionInfo:
       type: object
       properties:
@@ -245,6 +245,9 @@ components:
         GUID:
           type: string
           example: "892hq"
+        showroomURL:
+          type: string
+          example: "http://bastion.32s34.sandbox9988.opentls.com:8080"
         randomString:
           type: string
           example: "qUCbpGuwgwcYufF"

@@ -40,6 +40,10 @@ type ResourceClaimProvider struct {
 type ResourceClaimProvisionData struct {
 	RandomString string `json:"random_string"`
 	GUID         string `json:"GUID"`
+	ShowroomURL  string `json:"showroom_primary_view_url"`
+	SshCommand   string `json:"ssh_command"`
+	SshPassword  string `json:"ssh_password"`
+	SshUsername  string `json:"ssh_username"`
 }
 
 type ResourceClaimStatusSummary struct {
