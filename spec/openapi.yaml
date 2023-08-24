@@ -245,7 +245,7 @@ components:
         GUID:
           type: string
           example: "892hq"
-        showroomURL:
+        labUserInterfaceUrl:
           type: string
           example: "http://bastion.32s34.sandbox9988.opentls.com:8080"
         randomString:
