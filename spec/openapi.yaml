@@ -248,9 +248,6 @@ components:
         labUserInterfaceUrl:
           type: string
           example: "http://bastion.32s34.sandbox9988.opentls.com:8080"
-        randomString:
-          type: string
-          example: "qUCbpGuwgwcYufF"
         runtimeDefault:
           type: string
           example: "4h"
@@ -262,7 +259,6 @@ components:
           example: "stopped"
       required:
         - GUID
-        - randomString
         - runtimeDefault
         - runtimeMaximum
         - state

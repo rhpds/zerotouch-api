@@ -144,8 +144,7 @@ func (h *CatalogItemsHandler) GetProvisionStatus(
 	return GetProvisionStatus200JSONResponse(ProvisionStatus{
 		State:               claimStatus.State,
 		GUID:                claimStatus.GUID,
-		LabUserInterfaceUrl: &claimStatus.ShowroomURL,
-		RandomString:        claimStatus.RandomString,
+		LabUserInterfaceUrl: &claimStatus.LabURL,
 		RuntimeDefault:      claimStatus.RuntimeDefault,
 		RuntimeMaximum:      claimStatus.RuntimeMaximum,
 	}), nil

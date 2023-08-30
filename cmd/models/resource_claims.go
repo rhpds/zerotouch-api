@@ -29,8 +29,7 @@ type ResourceClaimParameters struct {
 
 type ResourceClaimStatus struct {
 	GUID           string
-	ShowroomURL    string
-	RandomString   string
+	LabURL         string
 	RuntimeDefault string
 	RuntimeMaximum string
 	State          string
@@ -81,7 +80,7 @@ func (c *ResourceClaimsController) CreateResourceClaim(
 				ParameterValues: v1.ResourceClaimParameterValues{
 					Purpose:        parameters.Purpose,
 					StartTimeStamp: parameters.Start.UTC().Format(time.RFC3339),
-					EndTimeStamp:   parameters.Stop.UTC().Format(time.RFC3339),
+					StopTimeStamp:  parameters.Stop.UTC().Format(time.RFC3339),
 				},
 			},
 		},
@@ -120,8 +119,7 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 
 	return &ResourceClaimStatus{
 		GUID:           rc.Status.Summary.ProvisionData.GUID,
-		ShowroomURL:    rc.Status.Summary.ProvisionData.ShowroomURL,
-		RandomString:   rc.Status.Summary.ProvisionData.RandomString,
+		LabURL:         rc.Status.Summary.ProvisionData.LabURL,
 		RuntimeDefault: rc.Status.Summary.RuntimeDefault,
 		RuntimeMaximum: rc.Status.Summary.RuntimeMaximum,
 		State:          rc.Status.Summary.State,
