@@ -29,7 +29,7 @@ type CatalogItemList struct {
 type ResourceClaimParameterValues struct {
 	Purpose        string `json:"purpose"`
 	StartTimeStamp string `json:"start_timestamp"`
-	EndTimeStamp   string `json:"end_timestamp"`
+	StopTimeStamp  string `json:"stop_timestamp"`
 }
 
 type ResourceClaimProvider struct {
@@ -38,8 +38,8 @@ type ResourceClaimProvider struct {
 }
 
 type ResourceClaimProvisionData struct {
-	RandomString string `json:"random_string"`
-	GUID         string `json:"GUID"`
+	GUID   string `json:"guid"`
+	LabURL string `json:"lab_ui_url"`
 }
 
 type ResourceClaimStatusSummary struct {
