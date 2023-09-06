@@ -9,6 +9,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+
 	"github.com/rhpds/zerotouch-api/cmd/handlers"
 	"github.com/rhpds/zerotouch-api/cmd/log"
 	"github.com/rhpds/zerotouch-api/cmd/models"
@@ -43,9 +44,9 @@ func main() {
 		AllowedOrigins: []string{"*"},
 		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
 		AllowedMethods: []string{"GET", "POST", "DELETE", "PUT", "PATCH", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type", "api_key", "Authorization"},
-		//ExposedHeaders:   []string{"Link"},
-		//AllowCredentials: false,
+		AllowedHeaders: []string{"Content-Type", "api_key", "Authorization", "X-Grecaptcha-Token"},
+		// ExposedHeaders:   []string{"Link"},
+		// AllowCredentials: false,
 		MaxAge: 300, // Maximum value not ignored by any of major browsers
 	}))
 
@@ -57,7 +58,6 @@ func main() {
 }
 
 func mainRouter(swagger *openapi3.T) http.Handler {
-
 	kuebeconfig := os.Getenv("KUBECONFIG")
 	if kuebeconfig == "" {
 		log.Logger.Info("KUBECONFIG not set, using in-cluster config")
@@ -71,17 +71,28 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 	}
 	log.Logger.Info("Using RESOURCECLAIM_NAMESPACE: " + rcNamespace)
 
-	catalogItemsController, err := models.NewCatalogItemsController(kuebeconfig, context.Background(), "")
+	catalogItemsController, err := models.NewCatalogItemsController(
+		kuebeconfig,
+		context.Background(),
+		"",
+	)
 	if err != nil {
 		log.Err.Fatal("Error creating catalog items controller", err)
 	}
 
-	resourceClaimsController, err := models.NewResourceClaimsController(kuebeconfig, rcNamespace, context.Background())
+	resourceClaimsController, err := models.NewResourceClaimsController(
+		kuebeconfig,
+		rcNamespace,
+		context.Background(),
+	)
 	if err != nil {
 		log.Err.Fatal("Error creating resource claims controller", err)
 	}
 
-	catalogItemsHandler := handlers.NewCatalogItemsHandler(catalogItemsController, resourceClaimsController)
+	catalogItemsHandler := handlers.NewCatalogItemsHandler(
+		catalogItemsController,
+		resourceClaimsController,
+	)
 
 	strictHandler := handlers.NewStrictHandler(catalogItemsHandler, nil)
 	r := chi.NewRouter()
@@ -96,7 +107,6 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 }
 
 func swaggerSpecRouter(swagger *openapi3.T) http.Handler {
-
 	data, _ := swagger.MarshalJSON()
 
 	r := chi.NewRouter()
