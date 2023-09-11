@@ -33,6 +33,7 @@ type ResourceClaimStatus struct {
 	RuntimeDefault string
 	RuntimeMaximum string
 	State          string
+	LifespanEnd    string
 }
 
 type ResourceClaim struct {
@@ -123,5 +124,6 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 		RuntimeDefault: rc.Status.Summary.RuntimeDefault,
 		RuntimeMaximum: rc.Status.Summary.RuntimeMaximum,
 		State:          rc.Status.Summary.State,
+		LifespanEnd:    rc.Status.Lifespan.End,
 	}, ok, nil
 }

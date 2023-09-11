@@ -208,6 +208,7 @@ func (h *CatalogItemsHandler) GetProvisionStatus(
 		LabUserInterfaceUrl: &claimStatus.LabURL,
 		RuntimeDefault:      claimStatus.RuntimeDefault,
 		RuntimeMaximum:      claimStatus.RuntimeMaximum,
+		LifespanEnd:         claimStatus.LifespanEnd,
 	}), nil
 }
 
