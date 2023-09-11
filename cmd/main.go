@@ -113,27 +113,29 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 		log.Logger.Warn(
 			"Recaptcha validation disabled, make sure that RECAPTCHA_DISABLED environment variable is not set for production use.",
 		)
-	}
-
-	recaptchaConfig.AuthKey = os.Getenv("RECAPTCHA_AUTH_KEY")
-	if recaptchaConfig.AuthKey == "" && !recaptchaConfig.Disabled {
-		log.Err.Fatal("RECAPTCHA_AUTH_KEY not set, exiting")
-	}
-
-	threshold, err := strconv.ParseFloat(os.Getenv("RECAPTCHA_THRESHOLD"), 64)
-	if err != nil {
-		log.Logger.Error("Incorrect RECAPTCHA_THRESHOLD value, using default")
 	} else {
-		recaptchaConfig.Threshold = threshold
+
+		recaptchaConfig.AuthKey = os.Getenv("RECAPTCHA_AUTH_KEY")
+		if recaptchaConfig.AuthKey == "" {
+			log.Err.Fatal("RECAPTCHA_AUTH_KEY not set, exiting")
+		}
+
+		if len(os.Getenv("RECAPTCHA_THRESHOLD")) > 0 {
+			threshold, err := strconv.ParseFloat(os.Getenv("RECAPTCHA_THRESHOLD"), 64)
+			if err != nil {
+				log.Logger.Error("Incorrect RECAPTCHA_THRESHOLD value, using default")
+			} else {
+				recaptchaConfig.Threshold = threshold
+			}
+		}
+
+		log.Logger.Info("Google Recaptcha config",
+			"recaptchaConfig.ProjectID", recaptchaConfig.ProjectID,
+			"recaptchaConfig.RecapthcaSiteKey", recaptchaConfig.RecapthcaSiteKey,
+			"recaptchaConfig.Threshold", fmt.Sprintf("%f", recaptchaConfig.Threshold),
+			"recaptchaConfig.Debug", fmt.Sprintf("%v", recaptchaConfig.Disabled),
+		)
 	}
-
-	log.Logger.Info("Google Recaptcha config",
-		"recaptchaConfig.ProjectID", recaptchaConfig.ProjectID,
-		"recaptchaConfig.RecapthcaSiteKey", recaptchaConfig.RecapthcaSiteKey,
-		"recaptchaConfig.Threshold", fmt.Sprintf("%f", recaptchaConfig.Threshold),
-		"recaptchaConfig.Debug", fmt.Sprintf("%v", recaptchaConfig.Disabled),
-	)
-
 	//
 	// Create Handler
 	//
