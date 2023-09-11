@@ -80,6 +80,18 @@ type Status struct {
 // StatusStatus defines model for Status.Status.
 type StatusStatus string
 
+// CreateProvisionParams defines parameters for CreateProvision.
+type CreateProvisionParams struct {
+	// XGrecaptchaToken Google Recaptcha Token
+	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
+}
+
+// DeleteProvisionParams defines parameters for DeleteProvision.
+type DeleteProvisionParams struct {
+	// XGrecaptchaToken Google Recaptcha Token
+	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
+}
+
 // CreateProvisionJSONRequestBody defines body for CreateProvision for application/json ContentType.
 type CreateProvisionJSONRequestBody = ProvisionParams
 
@@ -96,10 +108,10 @@ type ServerInterface interface {
 	Health(w http.ResponseWriter, r *http.Request)
 	// Create new provision
 	// (POST /provision)
-	CreateProvision(w http.ResponseWriter, r *http.Request)
+	CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams)
 	// Destroy provision
 	// (DELETE /provision/{name})
-	DeleteProvision(w http.ResponseWriter, r *http.Request, name string)
+	DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams)
 	// Get provision status
 	// (GET /provision/{name})
 	GetProvisionStatus(w http.ResponseWriter, r *http.Request, name string)
@@ -129,13 +141,13 @@ func (_ Unimplemented) Health(w http.ResponseWriter, r *http.Request) {
 
 // Create new provision
 // (POST /provision)
-func (_ Unimplemented) CreateProvision(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Destroy provision
 // (DELETE /provision/{name})
-func (_ Unimplemented) DeleteProvision(w http.ResponseWriter, r *http.Request, name string) {
+func (_ Unimplemented) DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -214,8 +226,34 @@ func (siw *ServerInterfaceWrapper) Health(w http.ResponseWriter, r *http.Request
 func (siw *ServerInterfaceWrapper) CreateProvision(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateProvisionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Grecaptcha-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Grecaptcha-Token")]; found {
+		var XGrecaptchaToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Grecaptcha-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Grecaptcha-Token", runtime.ParamLocationHeader, valueList[0], &XGrecaptchaToken)
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Grecaptcha-Token", Err: err})
+			return
+		}
+
+		params.XGrecaptchaToken = &XGrecaptchaToken
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateProvision(w, r)
+		siw.Handler.CreateProvision(w, r, params)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -240,8 +278,32 @@ func (siw *ServerInterfaceWrapper) DeleteProvision(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Parameter object where we will unmarshal all parameters from the context
+	var params DeleteProvisionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Grecaptcha-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Grecaptcha-Token")]; found {
+		var XGrecaptchaToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Grecaptcha-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Grecaptcha-Token", runtime.ParamLocationHeader, valueList[0], &XGrecaptchaToken)
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Grecaptcha-Token", Err: err})
+			return
+		}
+
+		params.XGrecaptchaToken = &XGrecaptchaToken
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteProvision(w, r, name)
+		siw.Handler.DeleteProvision(w, r, name, params)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -479,7 +541,8 @@ func (response Health200JSONResponse) VisitHealthResponse(w http.ResponseWriter)
 }
 
 type CreateProvisionRequestObject struct {
-	Body *CreateProvisionJSONRequestBody
+	Params CreateProvisionParams
+	Body   *CreateProvisionJSONRequestBody
 }
 
 type CreateProvisionResponseObject interface {
@@ -503,6 +566,15 @@ func (response CreateProvision201JSONResponse) VisitCreateProvisionResponse(w ht
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type CreateProvision401JSONResponse Error
+
+func (response CreateProvision401JSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type CreateProvision500JSONResponse Error
 
 func (response CreateProvision500JSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
@@ -513,7 +585,8 @@ func (response CreateProvision500JSONResponse) VisitCreateProvisionResponse(w ht
 }
 
 type DeleteProvisionRequestObject struct {
-	Name string `json:"name"`
+	Name   string `json:"name"`
+	Params DeleteProvisionParams
 }
 
 type DeleteProvisionResponseObject interface {
@@ -526,6 +599,15 @@ type DeleteProvision204Response struct {
 func (response DeleteProvision204Response) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
+}
+
+type DeleteProvision401JSONResponse Error
+
+func (response DeleteProvision401JSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteProvision500JSONResponse Error
@@ -705,8 +787,10 @@ func (sh *strictHandler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateProvision operation middleware
-func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams) {
 	var request CreateProvisionRequestObject
+
+	request.Params = params
 
 	var body CreateProvisionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -736,10 +820,11 @@ func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request)
 }
 
 // DeleteProvision operation middleware
-func (sh *strictHandler) DeleteProvision(w http.ResponseWriter, r *http.Request, name string) {
+func (sh *strictHandler) DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams) {
 	var request DeleteProvisionRequestObject
 
 	request.Name = name
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteProvision(ctx, request.(DeleteProvisionRequestObject))
@@ -790,30 +875,31 @@ func (sh *strictHandler) GetProvisionStatus(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RYS3Pbug7+Kxzdu7Rs+ZHG8S436U0zfcSTtJt2soAkyGJLkSoJJfVk/N/PkJKjp5P2",
-	"nHSmZxWFj48Avo8A6AcvUlmuJEoy3urBM1GKGbjPMyAQanNJmNl/c61y1MTRTZ6jiTTPiStp/8UfkOUC",
-	"vZW31uqOG64kAxkzKEhlYFexSEnSSgjULNfqK0bE7jmlDCSzwEBKMy4NgRAYj72RR9vcAhrSXG683ah5",
-	"5v+VzoDaJ6eUicFt3OQCth8gw/aGd+vXK3aNMXsDxE6l4aFAdlpbvBZAidJZc+zs0Yuho/pnbHLCsUlB",
-	"Y+zfK/1NKIh9kaNfR8avIzPOtYqHgF1UY9Rt8Os35+uh1Txur1se42yGydxPYBn6C1hO/WUYBH6YzONp",
-	"FAbTV7Okj7MbeRq/F1xj7K2+WNDKwXZIW7x4Qyw1zL99PEWFVgLW2tdaK91XWKRiF8u4qbRyMXNzo9rD",
-	"oyAYeUmlCY9Lms9qf7gk3KC2R2VoDGwOwu6nG8jepSTUEgS7QX2HmpXWPhesysA94JDbjxflUiaq7/6Z",
-	"RiCMTzsinwWzuR8s/enRx2C6ms1Xi6PPXsP3GAh94o6Xn5AnoSEnRX+6HIcQboWSPmY5ba0qE745qMhP",
-	"l+dtqON5HCAsjvwkiBJ/EYev/BOYBv7x8SxaBhicTOcnz8atUpQFHzVC8GT81qAhM/0IDnv7a17uhTuM",
-	"ZX4RrNC5Mh2cj2jIzg+svyHQL0n/Dan8ANyrX4YbJq4Vr9rjvS+VDU/SeUNAxQCdFz3FLU9m6fchRwWE",
-	"nwxqd3UTiPCTFt1SQflqMgnB2Ps/ns/MfDE2IONQ/Tg5WS7HKkdJwowjla2WwTIYOkUX0obmHBMoRIen",
-	"RfrEjvfwg2dF1nFmcIchoI5gDKk8x/hZRi7KS9SxsmfE/owhTg5R0UijgxaXe1BaH794V2+9kff6+vrq",
-	"2h5SO+LG+z50rLBDvMqQ7Zx9ur5kpFgGEjbIqm6F2XbFMDAMWA6amErYZ9SKfVRFlLL11Zk9lJOz4OYe",
-	"NhvUzQUW1GdXOUr7NR9b5u9Qm/LI6TgYB9ZLqw/Iubfy5uOpW5QDpc7tSVT3TW5gg9Q3/h03xECItt2e",
-	"Q9auLbiMq2VnTTzLscmVNCUTsyAoa6UklO4YyHPBI4cw+WrK7qxs6uwX3xv1X42Jt/L+M6nbv0nV+02a",
-	"jV9NCGgN25KPtis3RRShMUkh2KPxjklTZBno7VPeEmyM1Uh7/NbubsVx8iAhw93BcF4gMWihs3DLqizU",
-	"DukFNiPqmNOQIaG2lnSBW5AVHrcTlm9v5ElXGMo/zftHusBRI/Bdnd/+QyJ/mr8+X1dvLauLYNEPY8tb",
-	"qYglqpCxXX70gvaVLdSAZcO9VltKfaafkVGKICg9qJw3bppFKUbfelopJ73fyFWVYv/eterYvo/CaZxx",
-	"WXmf78uqy+LKDESgbLOYxHtWr+5Goly0bsxbraOh/6l4+2LR6PZ0A2Gp35cxEnBhbA2InHW9C7jrETd9",
-	"eVNd+z5gaNW9eiMvRYhddnnw3qnysIGCUM3YgkVpn47DqWT3J13PA2LaS/Mxatb0jkIbOT5GgTTwTDtH",
-	"Q1pta2ib5eVQlj93CE29Ppnma1XJ35njB1LuB+V+U7Cs/Uk89iJ9mMTR4ZJc81S2hQfpukDqPgD+DMaC",
-	"l08Yh1N+WZlnwawfzXITqwhytXlrK+EdcAGhQJYozSjlpsHYv7zKd8XzRBqxex1YqZTCvvf2jzyhIhCp",
-	"MlQ+5CzHFcyAYu1TnNnnhq5+74NQFdRrWyt9tYd3oy7ge/s0sYgo77hWMkPZcKt89VdQLY/6SK6kc0NV",
-	"G/C4rSz1u9vdXwEAAP//knKA+sgVAAA=",
+	"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",
+	"2b893D78LwAA//8GbLNjnRcAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

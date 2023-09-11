@@ -86,6 +86,12 @@ paths:
       summary: Create new provision
       description: Create new provision
       operationId: createProvision
+      parameters:
+        - name: X-Grecaptcha-Token
+          in: header
+          description: Google Recaptcha Token
+          schema:
+            type: string
       requestBody:
         description: Provision details to create
         required: true
@@ -105,6 +111,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProvisionInfo"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
           description: Internal Server Error
           content:
@@ -156,9 +168,20 @@ paths:
           required: true
           schema:
             type: string
+        - name: X-Grecaptcha-Token
+          in: header
+          description: Google Recaptcha Token
+          schema:
+            type: string
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "500":
           description: Internal Server Error
           content:
