@@ -87,12 +87,6 @@ type CreateProvisionParams struct {
 	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
 }
 
-// DeleteProvisionParams defines parameters for DeleteProvision.
-type DeleteProvisionParams struct {
-	// XGrecaptchaToken Google Recaptcha Token
-	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
-}
-
 // CreateProvisionJSONRequestBody defines body for CreateProvision for application/json ContentType.
 type CreateProvisionJSONRequestBody = ProvisionParams
 
@@ -112,7 +106,7 @@ type ServerInterface interface {
 	CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams)
 	// Destroy provision
 	// (DELETE /provision/{name})
-	DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams)
+	DeleteProvision(w http.ResponseWriter, r *http.Request, name string)
 	// Get provision status
 	// (GET /provision/{name})
 	GetProvisionStatus(w http.ResponseWriter, r *http.Request, name string)
@@ -148,7 +142,7 @@ func (_ Unimplemented) CreateProvision(w http.ResponseWriter, r *http.Request, p
 
 // Destroy provision
 // (DELETE /provision/{name})
-func (_ Unimplemented) DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams) {
+func (_ Unimplemented) DeleteProvision(w http.ResponseWriter, r *http.Request, name string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -279,32 +273,8 @@ func (siw *ServerInterfaceWrapper) DeleteProvision(w http.ResponseWriter, r *htt
 		return
 	}
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params DeleteProvisionParams
-
-	headers := r.Header
-
-	// ------------- Optional header parameter "X-Grecaptcha-Token" -------------
-	if valueList, found := headers[http.CanonicalHeaderKey("X-Grecaptcha-Token")]; found {
-		var XGrecaptchaToken string
-		n := len(valueList)
-		if n != 1 {
-			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Grecaptcha-Token", Count: n})
-			return
-		}
-
-		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Grecaptcha-Token", runtime.ParamLocationHeader, valueList[0], &XGrecaptchaToken)
-		if err != nil {
-			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Grecaptcha-Token", Err: err})
-			return
-		}
-
-		params.XGrecaptchaToken = &XGrecaptchaToken
-
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteProvision(w, r, name, params)
+		siw.Handler.DeleteProvision(w, r, name)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -586,8 +556,7 @@ func (response CreateProvision500JSONResponse) VisitCreateProvisionResponse(w ht
 }
 
 type DeleteProvisionRequestObject struct {
-	Name   string `json:"name"`
-	Params DeleteProvisionParams
+	Name string `json:"name"`
 }
 
 type DeleteProvisionResponseObject interface {
@@ -600,15 +569,6 @@ type DeleteProvision204Response struct {
 func (response DeleteProvision204Response) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
 	w.WriteHeader(204)
 	return nil
-}
-
-type DeleteProvision401JSONResponse Error
-
-func (response DeleteProvision401JSONResponse) VisitDeleteProvisionResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(401)
-
-	return json.NewEncoder(w).Encode(response)
 }
 
 type DeleteProvision500JSONResponse Error
@@ -821,11 +781,10 @@ func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request,
 }
 
 // DeleteProvision operation middleware
-func (sh *strictHandler) DeleteProvision(w http.ResponseWriter, r *http.Request, name string, params DeleteProvisionParams) {
+func (sh *strictHandler) DeleteProvision(w http.ResponseWriter, r *http.Request, name string) {
 	var request DeleteProvisionRequestObject
 
 	request.Name = name
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.DeleteProvision(ctx, request.(DeleteProvisionRequestObject))
@@ -876,31 +835,31 @@ func (sh *strictHandler) GetProvisionStatus(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"JoYbKhufx21Fc7O92/4VAAD//+nuWF0JFwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

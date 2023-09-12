@@ -143,19 +143,6 @@ func (h *CatalogItemsHandler) DeleteProvision(
 	ctx context.Context,
 	request DeleteProvisionRequestObject,
 ) (DeleteProvisionResponseObject, error) {
-	var token string
-	if request.Params.XGrecaptchaToken != nil {
-		token = *request.Params.XGrecaptchaToken // reCAPTCHA Token is not provided
-	}
-
-	if !h.recaptchaConfig.Disabled &&
-		!h.verifyRecaptchaToken(token, "login") {
-		return DeleteProvision401JSONResponse(Error{
-			Code:    http.StatusUnauthorized,
-			Message: "reCAPTCHA Token verification failed",
-		}), nil
-	}
-
 	err := h.rcController.DeleteResourceClaim(request.Name)
 	if err != nil {
 		log.Logger.Error(

@@ -168,20 +168,9 @@ paths:
           required: true
           schema:
             type: string
-        - name: X-Grecaptcha-Token
-          in: header
-          description: Google Recaptcha Token
-          schema:
-            type: string
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
         "500":
           description: Internal Server Error
           content:
