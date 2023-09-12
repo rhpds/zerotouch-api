@@ -1,4 +1,12 @@
 ---
+googleRecaptcha:
+  # Disable reCAPTCHA checks for debug puposes
+  disabled: false
+  # Override default threshold value for reCAPTCHA score (default 0.5)
+  threshold: 0.5
+  # Auth key for the reCAPTCHA project
+  authKey: ""
+
 namespace:
   # Specifies whether a namespace should be created
   create: true
@@ -8,7 +16,6 @@ namespace:
 
 nameOverride: ""
 fullnameOverride: ""
-
 
 image:
   repository: quay.io/makirill/zerotouch-api
@@ -28,7 +35,6 @@ service:
     swagger: 8081
 
 #ingressDomain: <required>
-
 
 serviceAccount:
   # Specifies whether a service account should be created

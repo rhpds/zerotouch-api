@@ -68,6 +68,7 @@ helm template helm \
 --set nameOverride=zerotouch-api-dev \
 --set namespace.create=false \
 --set ingressDomain="apps-crc.testing" \
+--set googleRecaptcha.authKey=" " \
 --set image.override="$(oc get imagestream zerotouch-api -o jsonpath='{.status.tags[?(@.tag=="latest")].items[0].dockerImageReference}')" \
 | oc apply -f -
 --------------------------------------------------------------------------------
