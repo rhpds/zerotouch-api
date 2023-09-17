@@ -5,28 +5,37 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/rhpds/zerotouch-api/cmd/log"
 	"github.com/rhpds/zerotouch-api/cmd/models"
+	"github.com/rhpds/zerotouch-api/cmd/recaptcha"
 )
+
+type RecaptchaConfig struct {
+	ProjectID        string
+	AuthKey          string
+	RecapthcaSiteKey string
+	Threshold        float64
+	Disabled         bool
+}
 
 type CatalogItemsHandler struct {
 	catalogItemsController *models.CatalogItemsController
 	rcController           *models.ResourceClaimsController
+	recaptchaConfig        *RecaptchaConfig
 }
-
-// Make sure we conform to the StrictServer interface
-var _ StrictServerInterface = (*CatalogItemsHandler)(nil)
 
 func NewCatalogItemsHandler(
 	catalogItemsController *models.CatalogItemsController,
 	rcController *models.ResourceClaimsController,
+	recaptchaConfig *RecaptchaConfig,
 ) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
 		catalogItemsController: catalogItemsController,
 		rcController:           rcController,
+		recaptchaConfig:        recaptchaConfig,
 	}
 }
 
-// TODO: add pagination
 func (h *CatalogItemsHandler) ListCatalogItems(
 	ctx context.Context,
 	request ListCatalogItemsRequestObject,
@@ -54,6 +63,8 @@ func (h *CatalogItemsHandler) GetCatalogItem(
 ) (GetCatalogItemResponseObject, error) {
 	catalogItem, ok, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
+		log.Logger.Error("can't retrieve CatalogItem", "name", request.Name, "error", err.Error())
+
 		return GetCatalogItem500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
@@ -86,14 +97,36 @@ func (h *CatalogItemsHandler) CreateProvision(
 		Stop:         request.Body.Stop,
 	}
 
+	var token string
+	if request.Params.XGrecaptchaToken != nil {
+		token = *request.Params.XGrecaptchaToken // reCAPTCHA token is not provided
+	}
+
+	if !h.recaptchaConfig.Disabled &&
+		!h.verifyRecaptchaToken(token, "login") {
+		return CreateProvision401JSONResponse(Error{
+			Code:    http.StatusUnauthorized,
+			Message: "reCAPTCHA Token verification failed",
+		}), nil
+	}
+
 	rcInfo, err := h.rcController.CreateResourceClaim(rc)
 	if err != nil {
+		log.Logger.Error(
+			"can't create provision",
+			"provision name", request.Body.Name,
+			"error", err.Error(),
+		)
+
 		return CreateProvision500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
 	}
 
+	log.Logger.Info("provision created", "provision name", request.Body.Name)
+
+	// TODO: Provide lifespan.end with the response
 	return CreateProvision201JSONResponse{
 		Body: ProvisionInfo{
 			Name:      rcInfo.Name,
@@ -112,21 +145,36 @@ func (h *CatalogItemsHandler) DeleteProvision(
 ) (DeleteProvisionResponseObject, error) {
 	err := h.rcController.DeleteResourceClaim(request.Name)
 	if err != nil {
+		log.Logger.Error(
+			"can't delete provision",
+			"provision", request.Name,
+			"error", err.Error(),
+		)
+
 		return DeleteProvision500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
 	}
 
+	log.Logger.Info("provision deleted", "provision name", request.Name)
+
 	return DeleteProvision204Response{}, nil
 }
 
+// TODO: Provide lifespan end
 func (h *CatalogItemsHandler) GetProvisionStatus(
 	ctx context.Context,
 	request GetProvisionStatusRequestObject,
 ) (GetProvisionStatusResponseObject, error) {
 	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
 	if err != nil {
+		log.Logger.Error(
+			"can't retrieve provision status",
+			"provision", request.Name,
+			"error", err.Error(),
+		)
+
 		return GetProvisionStatus500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
@@ -147,6 +195,7 @@ func (h *CatalogItemsHandler) GetProvisionStatus(
 		LabUserInterfaceUrl: &claimStatus.LabURL,
 		RuntimeDefault:      claimStatus.RuntimeDefault,
 		RuntimeMaximum:      claimStatus.RuntimeMaximum,
+		LifespanEnd:         claimStatus.LifespanEnd,
 	}), nil
 }
 
@@ -159,4 +208,43 @@ func (h *CatalogItemsHandler) Health(
 	return Health200JSONResponse{
 		Status: &status,
 	}, nil
+}
+
+// Helpers
+func (h *CatalogItemsHandler) verifyRecaptchaToken(
+	token string,
+	action string,
+) bool {
+	assessmentParams := recaptcha.AssessmentParams{
+		ProjectID:        h.recaptchaConfig.ProjectID,
+		AuthKey:          h.recaptchaConfig.AuthKey,
+		RecapthcaSiteKey: h.recaptchaConfig.RecapthcaSiteKey,
+	}
+
+	assessment, err := recaptcha.CreateAssessment(token, action, assessmentParams)
+	if err != nil {
+		log.Logger.Error("can't crate grecaptcha assessment", "error", err.Error())
+		return false
+	}
+
+	if !assessment.IsTokenValid() {
+		log.Logger.Debug("invalid token", "reason", assessment.GetInvalidReason())
+		return false
+	}
+
+	if !assessment.IsActionValid() {
+		log.Logger.Debug(
+			"invalid token action",
+			"expected: "+assessment.GetExpectedAction(),
+			"actual: "+assessment.GetAction(),
+		)
+		return false
+	}
+
+	if !assessment.IsScoreValid(h.recaptchaConfig.Threshold) {
+		log.Logger.Debug("token score is low", "score reason", assessment.GetScoreReasons())
+		return false
+	}
+
+	return true
 }

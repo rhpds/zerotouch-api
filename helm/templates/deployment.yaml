@@ -24,6 +24,12 @@ spec:
         env:
         - name: RESOURCECLAIM_NAMESPACE
           value: {{ include "zerotouch-api.namespaceName" . }}
+        - name: RECAPTCHA_DISABLED
+          value: {{ .Values.googleRecaptcha.disabled | quote }}
+        - name: RECAPTCHA_THRESHOLD
+          value: {{ .Values.googleRecaptcha.threshold | quote }}
+        - name: RECAPTCHA_AUTH_KEY
+          value: {{ .Values.googleRecaptcha.authKey | quote }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}

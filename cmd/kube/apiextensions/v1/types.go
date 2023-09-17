@@ -49,8 +49,13 @@ type ResourceClaimStatusSummary struct {
 	State          string                     `json:"state"`
 }
 
+type ResourceClaimStatusLifespan struct {
+	End string `json:"end"`
+}
+
 type ResourceClaimStatus struct {
-	Summary ResourceClaimStatusSummary `json:"summary"`
+	Summary  ResourceClaimStatusSummary  `json:"summary"`
+	Lifespan ResourceClaimStatusLifespan `json:"lifespan"`
 }
 
 type ResourceClaimSpec struct {

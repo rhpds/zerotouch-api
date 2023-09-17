@@ -66,6 +66,7 @@ type ProvisionParams struct {
 type ProvisionStatus struct {
 	GUID                string  `json:"GUID"`
 	LabUserInterfaceUrl *string `json:"labUserInterfaceUrl,omitempty"`
+	LifespanEnd         string  `json:"lifespanEnd"`
 	RuntimeDefault      string  `json:"runtimeDefault"`
 	RuntimeMaximum      string  `json:"runtimeMaximum"`
 	State               string  `json:"state"`
@@ -79,6 +80,12 @@ type Status struct {
 
 // StatusStatus defines model for Status.Status.
 type StatusStatus string
+
+// CreateProvisionParams defines parameters for CreateProvision.
+type CreateProvisionParams struct {
+	// XGrecaptchaToken Google Recaptcha Token
+	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
+}
 
 // CreateProvisionJSONRequestBody defines body for CreateProvision for application/json ContentType.
 type CreateProvisionJSONRequestBody = ProvisionParams
@@ -96,7 +103,7 @@ type ServerInterface interface {
 	Health(w http.ResponseWriter, r *http.Request)
 	// Create new provision
 	// (POST /provision)
-	CreateProvision(w http.ResponseWriter, r *http.Request)
+	CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams)
 	// Destroy provision
 	// (DELETE /provision/{name})
 	DeleteProvision(w http.ResponseWriter, r *http.Request, name string)
@@ -129,7 +136,7 @@ func (_ Unimplemented) Health(w http.ResponseWriter, r *http.Request) {
 
 // Create new provision
 // (POST /provision)
-func (_ Unimplemented) CreateProvision(w http.ResponseWriter, r *http.Request) {
+func (_ Unimplemented) CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -214,8 +221,34 @@ func (siw *ServerInterfaceWrapper) Health(w http.ResponseWriter, r *http.Request
 func (siw *ServerInterfaceWrapper) CreateProvision(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateProvisionParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "X-Grecaptcha-Token" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Grecaptcha-Token")]; found {
+		var XGrecaptchaToken string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "X-Grecaptcha-Token", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Grecaptcha-Token", runtime.ParamLocationHeader, valueList[0], &XGrecaptchaToken)
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "X-Grecaptcha-Token", Err: err})
+			return
+		}
+
+		params.XGrecaptchaToken = &XGrecaptchaToken
+
+	}
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateProvision(w, r)
+		siw.Handler.CreateProvision(w, r, params)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -479,7 +512,8 @@ func (response Health200JSONResponse) VisitHealthResponse(w http.ResponseWriter)
 }
 
 type CreateProvisionRequestObject struct {
-	Body *CreateProvisionJSONRequestBody
+	Params CreateProvisionParams
+	Body   *CreateProvisionJSONRequestBody
 }
 
 type CreateProvisionResponseObject interface {
@@ -501,6 +535,15 @@ func (response CreateProvision201JSONResponse) VisitCreateProvisionResponse(w ht
 	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type CreateProvision401JSONResponse Error
+
+func (response CreateProvision401JSONResponse) VisitCreateProvisionResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
 }
 
 type CreateProvision500JSONResponse Error
@@ -705,8 +748,10 @@ func (sh *strictHandler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 // CreateProvision operation middleware
-func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request) {
+func (sh *strictHandler) CreateProvision(w http.ResponseWriter, r *http.Request, params CreateProvisionParams) {
 	var request CreateProvisionRequestObject
+
+	request.Params = params
 
 	var body CreateProvisionJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
@@ -790,30 +835,31 @@ func (sh *strictHandler) GetProvisionStatus(w http.ResponseWriter, r *http.Reque
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9RYS3Pbug7+Kxzdu7Rs+ZHG8S436U0zfcSTtJt2soAkyGJLkSoJJfVk/N/PkJKjp5P2",
-	"nHSmZxWFj48Avo8A6AcvUlmuJEoy3urBM1GKGbjPMyAQanNJmNl/c61y1MTRTZ6jiTTPiStp/8UfkOUC",
-	"vZW31uqOG64kAxkzKEhlYFexSEnSSgjULNfqK0bE7jmlDCSzwEBKMy4NgRAYj72RR9vcAhrSXG683ah5",
-	"5v+VzoDaJ6eUicFt3OQCth8gw/aGd+vXK3aNMXsDxE6l4aFAdlpbvBZAidJZc+zs0Yuho/pnbHLCsUlB",
-	"Y+zfK/1NKIh9kaNfR8avIzPOtYqHgF1UY9Rt8Os35+uh1Txur1se42yGydxPYBn6C1hO/WUYBH6YzONp",
-	"FAbTV7Okj7MbeRq/F1xj7K2+WNDKwXZIW7x4Qyw1zL99PEWFVgLW2tdaK91XWKRiF8u4qbRyMXNzo9rD",
-	"oyAYeUmlCY9Lms9qf7gk3KC2R2VoDGwOwu6nG8jepSTUEgS7QX2HmpXWPhesysA94JDbjxflUiaq7/6Z",
-	"RiCMTzsinwWzuR8s/enRx2C6ms1Xi6PPXsP3GAh94o6Xn5AnoSEnRX+6HIcQboWSPmY5ba0qE745qMhP",
-	"l+dtqON5HCAsjvwkiBJ/EYev/BOYBv7x8SxaBhicTOcnz8atUpQFHzVC8GT81qAhM/0IDnv7a17uhTuM",
-	"ZX4RrNC5Mh2cj2jIzg+svyHQL0n/Dan8ANyrX4YbJq4Vr9rjvS+VDU/SeUNAxQCdFz3FLU9m6fchRwWE",
-	"nwxqd3UTiPCTFt1SQflqMgnB2Ps/ns/MfDE2IONQ/Tg5WS7HKkdJwowjla2WwTIYOkUX0obmHBMoRIen",
-	"RfrEjvfwg2dF1nFmcIchoI5gDKk8x/hZRi7KS9SxsmfE/owhTg5R0UijgxaXe1BaH794V2+9kff6+vrq",
-	"2h5SO+LG+z50rLBDvMqQ7Zx9ur5kpFgGEjbIqm6F2XbFMDAMWA6amErYZ9SKfVRFlLL11Zk9lJOz4OYe",
-	"NhvUzQUW1GdXOUr7NR9b5u9Qm/LI6TgYB9ZLqw/Iubfy5uOpW5QDpc7tSVT3TW5gg9Q3/h03xECItt2e",
-	"Q9auLbiMq2VnTTzLscmVNCUTsyAoa6UklO4YyHPBI4cw+WrK7qxs6uwX3xv1X42Jt/L+M6nbv0nV+02a",
-	"jV9NCGgN25KPtis3RRShMUkh2KPxjklTZBno7VPeEmyM1Uh7/NbubsVx8iAhw93BcF4gMWihs3DLqizU",
-	"DukFNiPqmNOQIaG2lnSBW5AVHrcTlm9v5ElXGMo/zftHusBRI/Bdnd/+QyJ/mr8+X1dvLauLYNEPY8tb",
-	"qYglqpCxXX70gvaVLdSAZcO9VltKfaafkVGKICg9qJw3bppFKUbfelopJ73fyFWVYv/eterYvo/CaZxx",
-	"WXmf78uqy+LKDESgbLOYxHtWr+5Goly0bsxbraOh/6l4+2LR6PZ0A2Gp35cxEnBhbA2InHW9C7jrETd9",
-	"eVNd+z5gaNW9eiMvRYhddnnw3qnysIGCUM3YgkVpn47DqWT3J13PA2LaS/Mxatb0jkIbOT5GgTTwTDtH",
-	"Q1pta2ib5eVQlj93CE29Ppnma1XJ35njB1LuB+V+U7Cs/Uk89iJ9mMTR4ZJc81S2hQfpukDqPgD+DMaC",
-	"l08Yh1N+WZlnwawfzXITqwhytXlrK+EdcAGhQJYozSjlpsHYv7zKd8XzRBqxex1YqZTCvvf2jzyhIhCp",
-	"MlQ+5CzHFcyAYu1TnNnnhq5+74NQFdRrWyt9tYd3oy7ge/s0sYgo77hWMkPZcKt89VdQLY/6SK6kc0NV",
-	"G/C4rSz1u9vdXwEAAP//knKA+sgVAAA=",
+	"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",
+	"JoYbKhufx21Fc7O92/4VAAD//+nuWF0JFwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
