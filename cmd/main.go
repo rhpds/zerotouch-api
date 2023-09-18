@@ -11,6 +11,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
+	"github.com/joho/godotenv"
 
 	"github.com/rhpds/zerotouch-api/cmd/handlers"
 	"github.com/rhpds/zerotouch-api/cmd/log"
@@ -19,6 +20,13 @@ import (
 
 func main() {
 	log.InitLoggers(true)
+
+	// Loading the .env file. Environemnt variables will overwrite variables
+	// defined at the .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Logger.Info(err.Error())
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {

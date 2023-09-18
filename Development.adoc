@@ -37,6 +37,15 @@ KUBECONFIG=$HOME/.kube/config go run ./cmd
 curl -i http://localhost:8080/health
 -----------------------------------
 
+### Using dotenv file
+
+. Configuration can be done with a `.env` file (environemnt variables will ovverride options set at `.env` file):
++
+-----------------------------------
+KUBECONFIG=/home/user/.kube/config
+RESOURCECLAIM_NAMESPACE=zerotouch-api
+RECAPTCHA_DISABLED=true
+-----------------------------------
 
 ## Development OpenShift Build
 

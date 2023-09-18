@@ -7,6 +7,7 @@ require (
 	github.com/getkin/kin-openapi v0.118.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/go-chi/cors v1.2.1
+	github.com/joho/godotenv v1.5.1
 	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
