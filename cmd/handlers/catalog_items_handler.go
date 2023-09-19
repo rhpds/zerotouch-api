@@ -85,10 +85,10 @@ func (h *CatalogItemsHandler) GetCatalogItem(
 	}), nil
 }
 
-func (h *CatalogItemsHandler) CreateProvision(
+func (h *CatalogItemsHandler) CreateServiceRequest(
 	ctx context.Context,
-	request CreateProvisionRequestObject,
-) (CreateProvisionResponseObject, error) {
+	request CreateServiceRequestRequestObject,
+) (CreateServiceRequestResponseObject, error) {
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
@@ -104,7 +104,7 @@ func (h *CatalogItemsHandler) CreateProvision(
 
 	if !h.recaptchaConfig.Disabled &&
 		!h.verifyRecaptchaToken(token, "login") {
-		return CreateProvision401JSONResponse(Error{
+		return CreateServiceRequest401JSONResponse(Error{
 			Code:    http.StatusUnauthorized,
 			Message: "reCAPTCHA Token verification failed",
 		}), nil
@@ -118,7 +118,7 @@ func (h *CatalogItemsHandler) CreateProvision(
 			"error", err.Error(),
 		)
 
-		return CreateProvision500JSONResponse(Error{
+		return CreateServiceRequest500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
@@ -127,22 +127,22 @@ func (h *CatalogItemsHandler) CreateProvision(
 	log.Logger.Info("provision created", "provision name", request.Body.Name)
 
 	// TODO: Provide lifespan.end with the response
-	return CreateProvision201JSONResponse{
+	return CreateServiceRequest201JSONResponse{
 		Body: ProvisionInfo{
 			Name:      rcInfo.Name,
 			UID:       rcInfo.UID,
 			CreatedAt: rcInfo.CreatedAt,
 		},
-		Headers: CreateProvision201ResponseHeaders{
+		Headers: CreateServiceRequest201ResponseHeaders{
 			Location: fmt.Sprintf("/provision/%s", rcInfo.Name),
 		},
 	}, nil
 }
 
-func (h *CatalogItemsHandler) DeleteProvision(
+func (h *CatalogItemsHandler) DeleteServiceRequest(
 	ctx context.Context,
-	request DeleteProvisionRequestObject,
-) (DeleteProvisionResponseObject, error) {
+	request DeleteServiceRequestRequestObject,
+) (DeleteServiceRequestResponseObject, error) {
 	err := h.rcController.DeleteResourceClaim(request.Name)
 	if err != nil {
 		log.Logger.Error(
@@ -151,7 +151,7 @@ func (h *CatalogItemsHandler) DeleteProvision(
 			"error", err.Error(),
 		)
 
-		return DeleteProvision500JSONResponse(Error{
+		return DeleteServiceRequest500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
@@ -159,14 +159,14 @@ func (h *CatalogItemsHandler) DeleteProvision(
 
 	log.Logger.Info("provision deleted", "provision name", request.Name)
 
-	return DeleteProvision204Response{}, nil
+	return DeleteServiceRequest204Response{}, nil
 }
 
 // TODO: Provide lifespan end
-func (h *CatalogItemsHandler) GetProvisionStatus(
+func (h *CatalogItemsHandler) GetServiceRequestStatus(
 	ctx context.Context,
-	request GetProvisionStatusRequestObject,
-) (GetProvisionStatusResponseObject, error) {
+	request GetServiceRequestStatusRequestObject,
+) (GetServiceRequestStatusResponseObject, error) {
 	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
 	if err != nil {
 		log.Logger.Error(
@@ -175,21 +175,21 @@ func (h *CatalogItemsHandler) GetProvisionStatus(
 			"error", err.Error(),
 		)
 
-		return GetProvisionStatus500JSONResponse(Error{
+		return GetServiceRequestStatus500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
 	}
 
 	if !ok {
-		return GetProvisionStatus404Response{}, nil
+		return GetServiceRequestStatus404Response{}, nil
 	}
 
 	if claimStatus == nil {
-		return GetProvisionStatus202Response{}, nil
+		return GetServiceRequestStatus202Response{}, nil
 	}
 
-	return GetProvisionStatus200JSONResponse(ProvisionStatus{
+	return GetServiceRequestStatus200JSONResponse(ProvisionStatus{
 		State:               claimStatus.State,
 		GUID:                claimStatus.GUID,
 		LabUserInterfaceUrl: &claimStatus.LabURL,

@@ -4,15 +4,12 @@ import (
 	"context"
 	"strings"
 
-	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
-	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/babylon"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
-)
 
-// const (
-// 	error_not_found = "not found"
-// )
+	v1 "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1"
+	babylon "github.com/rhpds/zerotouch-api/cmd/kube/apiextensions/v1/clientsets/babylon"
+)
 
 type CatalogItemsController struct {
 	clientSet *babylon.BabylonResourcesClient
@@ -29,7 +26,11 @@ type CatalogItemInfo struct {
 	Provider          string
 }
 
-func NewCatalogItemsController(kubeconfigPath string, ctx context.Context, namespace string) (*CatalogItemsController, error) {
+func NewCatalogItemsController(
+	kubeconfigPath string,
+	ctx context.Context,
+	namespace string,
+) (*CatalogItemsController, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
