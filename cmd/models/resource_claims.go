@@ -57,9 +57,7 @@ func NewResourceClaimsController(
 		return nil, err
 	}
 
-	// Watch for resource claims in the all namespaces (last parameter)
-	// and store them in cache
-	store := poolboy.WatchResources(poolboyClientSet, "")
+	store := poolboy.WatchResources(poolboyClientSet, namespace)
 
 	return &ResourceClaimsController{
 		clientSet: poolboyClientSet,
