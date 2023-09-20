@@ -56,11 +56,11 @@ type ProvisionInfo struct {
 
 // ProvisionParams defines model for ProvisionParams.
 type ProvisionParams struct {
-	Name         string    `json:"Name"`
-	ProviderName string    `json:"ProviderName"`
-	Purpose      string    `json:"Purpose"`
-	Start        time.Time `json:"Start"`
-	Stop         time.Time `json:"Stop"`
+	Name         string     `json:"Name"`
+	ProviderName string     `json:"ProviderName"`
+	Purpose      string     `json:"Purpose"`
+	Start        time.Time  `json:"Start"`
+	Stop         *time.Time `json:"Stop,omitempty"`
 }
 
 // ProvisionStatus defines model for ProvisionStatus.
@@ -845,23 +845,23 @@ var swaggerSpec = []string{
 	"bxvhQRD0vKTShMcljUfbeLgkXKK2pjI0BpZ7YTfTNWTvQhJqCYItUN+hZqW3TyWrcnAD2BX2Q6FcyES1",
 	"wz/RCITx8Y7IR8Fo7AdTf3hwHQxno/FscvDJq8UeA6FP3PHyDHkSGnJS9IfTfgjhSijpY5bTyqoy4cu9",
 	"iry5OG1CHY7jAGFy4CdBlPiTOHzjH8Ew8A8PR9E0wOBoOD56Mm+Voix4r5aCR/N3BRoy085gd7Qvi3Ij",
-	"3G4s80KwQufK7OBcoyE737F+QaBfk/4FqXwP3JsXw3UT18jXNuJNLJUPj9K5IKCig87zluKmR6P0W1eg",
-	"AsIbg9qVbgIR3mixe1VQPhsMQjC2/vvjkRlP+gZkHKrvR0fTaV/lKEmYfqSy2TSYBp1WeIImB3km42eR",
-	"1ALQhbS5PcUECrFD9CR9ZMcH+M6zItvJRucOQ0A7ijOk8hzjJyk9L6twx8uWExsbzYR0UbyP2dqp3Ol/",
-	"uQeljfizd/nO63ln8/nl3BrZhuXG2xHteGGHeHXgNq+A46sLRoplIGGJrGp+mO1+DAPDgOWgiamEfUKt",
-	"2LUqopRdXZ5Yo5ycB4t7WC5R1xdYUJ9d5ijtr3HfCukOtSlNDvtBP7BRWrlBzr2ZN+4P3aIcKHVhD6Jt",
-	"G+YGlkht599zQwyEaPrtOWTtuoyLuFp2UsezjJtcSVMyMQqC8uqVhNKZgTwXPHIIgy+mbPbKHtH+4hun",
-	"/qsx8WbefwbbbnJQtZKDeh+5JQS0hlXJRzOURRFFaExSCPbgvGPSFFkGevVYtARLYzXSHL+1uxt5HPyQ",
-	"kOF6bzrPkRg00Fm4YtWh1kzpOdYz6pjTkCGhtp7sAjcgKzxuJyzfXs+T7p4p/9SrkXSBvVrid3V++w+J",
-	"fDZ/bb4u31lWJ8GkncZGtFIRS1QhY7v84BX9KzuyDs+6W7emlNpMPyGjFEFQulc5b900i1KMvra0Uk56",
-	"P5Gr6oj9e2W14/smC8dxxmUVvUF9xyOc47cCjfM1V6YjDWXrxoBVG5gud7D/zdGoQkd4IoBn/2eJ0gyY",
-	"xHv7KCwbgFbaSrBF0/QThXau1FIgm2MEOUUpsGv1FeWm2lKE2L3gqnr7wz/Xm5X+ZuUT1ebc+E3Fq1cj",
-	"b7ej7WBx+7qOkYALY6+syOWndV6sWzobvr6r7vHS4WjVu3u9KtfOg/eqNNZxf1Uz9n6lFFuC2M/F2h0+",
-	"w59/mtxIKChVmv+Jv9YRtrfWumtrU9YPFNo8dlV37ZKMUSB1PJtP3XjLMMiYxWhIq9XWtL1BZdcNWoK8",
-	"rLy3dSB/5iXacad9VO4bkKX8VxLBYocCUm0G9pPf298GlQ24rcsuee0/tM+RmpRWV9OvQWzw+ifh/qu3",
-	"7JBGwaid4XITq3h0PdLKdiR3wAWEAl2SKeWmlul/ebf1fEHtO6kspLNRCqiwr/vNk16oCESqDJXPdkt9",
-	"BdMhbuJyyexrUFdfdyFUBbVeFZXsmsPr3i7gB/tytIgo77hWMkNJ23jKbzwVVCOiNpLruLihqkt72FZ2",
-	"Yuvb9V8BAAD//0ENWKi2FwAA",
+	"3G4s80KwQufK7OBcoyE737F+QaBfk/4FqXwP3JsXw3UT18jXNuJNLI/yuCCgooPH85bUpkej9FtXhALC",
+	"G4Pa1WwCEd5osXtHUD4bDEIwtvD745EZT/oGZByq70dH02lf5ShJmH6kstk0mAadVniCJgd5JuNnsdMC",
+	"0IW0ST3FBAqxw/AkfWTHB/jOsyLbyUbnDkNAO1IzpPIc4ye5PC/Lb8fLlhMbG82EdFG8j9nacdzpf7kH",
+	"pY34s3f5zut5Z/P55dwa2YblxtsR7Xhhh3h10jbP/uOrC0aKZSBhiazqephtewwDw4DloImphH1Crdi1",
+	"KqKUXV2eWKOcnAeLe1guUdcXWFCfXeYo7a9x3wrpDrUpTQ77QT+wUVq5Qc69mTfuD92iHCh1YQ+ibf/l",
+	"BpZIbeffc0MMhGj67Tlk7dqLi7hadlLHs4ybXElTMjEKgvLOlYTSmYE8FzxyCIMvpuzyyubQ/uIbp/6r",
+	"MfFm3n8G2zZyUPWQg3oDuSUEtIZVyUczlEURRWhMUgj24Lxj0hRZBnr1WLQES2M10hy/tbsbeRz8kJDh",
+	"em86z5EYNNBZuGLVadZM6TnWM+qY05Ahobae7AI3ICs8bics317Pk+6CKf/Uq5F0gb1a4nd1fvsPiXw2",
+	"f22+Lt9ZVifBpJ3GRrRSEUtUIWO7/OAV/StbsQ7Punu2ppTaTD8hoxRBULpXOW/dNItSjL62tFJOej+R",
+	"q+qI/XtlteP7JgvHccZlFb1BfccjnOO3Ao3zNVemIw1lz8aAVRuYLnew/83RqEJHeCKAZ/9nidIMmMR7",
+	"+xosG4BW2kqwRdP0E4V2rtRSIJtjBDlFKbBr9RXlptpShNg93ap6+8M/15uV/mblE9Xm3PhNxatXI2+3",
+	"le1gcfusjpGAC2OvrMjlp3VerFs6G76+q+7V0uFo1bR7vSrXzoP3qjTWcX9VM/Z+pRRbgtjPxdodPsOf",
+	"f5rcSCgoVZr/ib/WEba31rpra1PWDxTaPHZVd+2SjFEgdbyXT914yzDImMVoSKvV1rS9QWXXDVqCvKy8",
+	"t3Ugf+Yl2nGnfVTu44+l/FcSwWKHAlJtBvaT39vfBpUNuK3LLnntP7TPkZqUVlfTr0Fs8Pon4f6rt+yQ",
+	"RsGoneFyE6t4dD3SynYkd8AFhAJdkinlppbpf3m39XxB7TupLKSzUQqosK/7zZNeqAhEqgyVz3ZLfQXT",
+	"IW7icsnsa1BXn3UhVAW1XhWV7JrD694u4Af7crSIKO+4VjJDSdt4yo87FVQjojaS67i4oapLe9hWdmLr",
+	"2/VfAQAA//+xBE1CrxcAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

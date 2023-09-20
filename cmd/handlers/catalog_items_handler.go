@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/rhpds/zerotouch-api/cmd/log"
 	"github.com/rhpds/zerotouch-api/cmd/models"
@@ -89,12 +90,18 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 	ctx context.Context,
 	request CreateServiceRequestRequestObject,
 ) (CreateServiceRequestResponseObject, error) {
+	var stop string
+	if request.Body.Stop != nil {
+		stopTimeStamp := *request.Body.Stop
+		stop = stopTimeStamp.UTC().Format(time.RFC3339)
+	}
+
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
 		Purpose:      request.Body.Purpose,
-		Start:        request.Body.Start,
-		Stop:         request.Body.Stop,
+		Start:        request.Body.Start.UTC().Format(time.RFC3339),
+		Stop:         stop,
 	}
 
 	var token string

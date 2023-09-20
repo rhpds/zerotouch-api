@@ -233,7 +233,6 @@ components:
         - ProviderName
         - Purpose
         - Start
-        - Stop
     ProvisionInfo:
       type: object
       properties:

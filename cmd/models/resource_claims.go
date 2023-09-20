@@ -23,8 +23,8 @@ type ResourceClaimParameters struct {
 	Name         string
 	ProviderName string
 	Purpose      string
-	Start        time.Time
-	Stop         time.Time
+	Start        string
+	Stop         string
 }
 
 type ResourceClaimStatus struct {
@@ -78,8 +78,8 @@ func (c *ResourceClaimsController) CreateResourceClaim(
 				Name: parameters.ProviderName,
 				ParameterValues: v1.ResourceClaimParameterValues{
 					Purpose:        parameters.Purpose,
-					StartTimeStamp: parameters.Start.UTC().Format(time.RFC3339),
-					StopTimeStamp:  parameters.Stop.UTC().Format(time.RFC3339),
+					StartTimeStamp: parameters.Start,
+					StopTimeStamp:  parameters.Stop,
 				},
 			},
 		},

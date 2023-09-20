@@ -6,7 +6,7 @@ https://cloud.redhat.com/blog/kubernetes-deep-dive-code-generation-customresourc
 +
 -----------------------------------
 go get sigs.k8s.io/controller-tools/cmd/controller-gen
-go install sigs.k8s.io/controller-tools/cmd/controller-gen
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
 -----------------------------------
 
 . Generate DeepCopy:
