@@ -85,7 +85,7 @@ paths:
         - Provisioning
       summary: Create a service request for a new provision
       description: Create a service request (ResourceClaim) for a new provision
-      operationId: createServiceRequest``
+      operationId: createServiceRequest
       parameters:
         - name: X-Grecaptcha-Token
           in: header
@@ -181,7 +181,7 @@ paths:
   /ratings/{name}:
     get:
       tags:
-        - ratings
+        - Ratings
       summary: Get Catalog Item ratings
       description: Get Catalog Item ratings
       operationId: getRating
@@ -199,6 +199,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CatalogItemRating"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /ratings:
+    post:
+      tags:
+        - Ratings
+      summary: Create a new rating for a provisioned item
+      description: Create a new ratign for a provisioned item
+      operationId: createRating
+      requestBody:
+        description: Rating details
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingDetails"
+      responses:
+        "201":
+          description: Created
         "500":
           description: Internal Server Error
           content:
@@ -247,6 +270,27 @@ components:
       required:
         - RatingScore
         - TotalRatings
+    RatingDetails:
+      type: object
+      properties:
+        ProvisionId:
+          type: string
+          example: "a904e6ba-ab62-4a16-9581-9f93d4720188"
+        Email:
+          type: string
+          example: "user@server.com"
+        Rating:
+          type: integer
+          example: 4
+        Comment:
+          type: string
+          example: "My comment"
+        Useful:
+          type: string
+          example: "yes"
+      required:
+        - ProvisionId
+        - Email
     ProvisionParams:
       type: object
       properties:

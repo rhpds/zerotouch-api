@@ -240,6 +240,37 @@ func (h *CatalogItemsHandler) GetRating(
 	}, nil
 }
 
+func (h *CatalogItemsHandler) CreateRating(
+	ctx context.Context,
+	request CreateRatingRequestObject,
+) (CreateRatingResponseObject, error) {
+	rating := ratings.NewRating{
+		Email: request.Body.Email,
+	}
+
+	if request.Body.Rating != nil {
+		rating.Rating = *request.Body.Rating
+	}
+
+	if request.Body.Comment != nil {
+		rating.Comment = *request.Body.Comment
+	}
+
+	if request.Body.Useful != nil {
+		rating.Useful = *request.Body.Useful
+	}
+
+	_, err := h.ratingsClient.SetRating(request.Body.ProvisionId, rating)
+	if err != nil {
+		return CreateRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	return CreateRating201Response{}, nil
+}
+
 // Helpers
 func (h *CatalogItemsHandler) verifyRecaptchaToken(
 	token string,
