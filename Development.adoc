@@ -6,7 +6,7 @@ https://cloud.redhat.com/blog/kubernetes-deep-dive-code-generation-customresourc
 +
 -----------------------------------
 go get sigs.k8s.io/controller-tools/cmd/controller-gen
-go install sigs.k8s.io/controller-tools/cmd/controller-gen
+go install sigs.k8s.io/controller-tools/cmd/controller-gen@latest
 -----------------------------------
 
 . Generate DeepCopy:
@@ -37,6 +37,76 @@ KUBECONFIG=$HOME/.kube/config go run ./cmd
 curl -i http://localhost:8080/health
 -----------------------------------
 
+### Using dotenv file
+
+. Configuration can be done with a `.env` file (environemnt variables will ovverride options set at `.env` file):
++
+-----------------------------------
+KUBECONFIG=/home/user/.kube/config
+RESOURCECLAIM_NAMESPACE=zerotouch-api
+RECAPTCHA_DISABLED=true
+-----------------------------------
+
+## Developemnt with `odo`
+
+Use of `odo` is recommended for fast iteractive development.
+`odo` simplifies the build/deploy process and avoids creating unnecessary build during the development process.
+
+. Install the `odo` developer CLI as described in the OpenShift documentation (odo v.3.12.0 was used as of time of writing this instruction): 
+https://docs.openshift.com/container-platform/latest/cli_reference/developer_cli_odo/installing-odo.html[Installing odo]
+
+. Create a project for development using `odo`:
++
+----
+odo create namespace zerotouch-api-dev
+----
+
+. Create Zerotouch API resourced using Helm Chart:
++
+----
+TBD
+----
+
+. Grant privileges for cluster role `zerotouch-api-dev` to default service account:
++
+----
+oc apply -f odo-rbac.yaml
+----
++
+NOTE: This is a workaround, it seems that recent `odo` version has better solution for additonal configurations
+
+. Check the the `devfile.yaml` for correct default environment variables, e.g.:
++
+[yaml]
+----
+- exec:
+    env:
+    - name: RESOURCECLAIM_NAMESPACE
+      value: "zerotouch-api"
+    - name: RECAPTCHA_DISABLED
+      value: "true"  
+----
+
+### Run application with `odo dev`
+
+Run zerotouch-api on the cluster in the Dev mode:
++
+----
+odo dev
+----
+
+The `odo` tool will monitory changes in the code and will do automatic sync/build/deploy cycle on save.
+
+
+### Run application with `odo deploy`
+
+Run zerotouch-api on the cluster in the Deploy mode:
++
+----
+odo deploy
+----
++
+NOTE: Not implemented, use helm chart for the deployments
 
 ## Development OpenShift Build
 

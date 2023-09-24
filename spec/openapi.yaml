@@ -79,13 +79,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /provision:
+  /serviceRequest:
     post:
       tags:
         - Provisioning
-      summary: Create new provision
-      description: Create new provision
-      operationId: createProvision
+      summary: Create a service request for a new provision
+      description: Create a service request (ResourceClaim) for a new provision
+      operationId: createServiceRequest``
       parameters:
         - name: X-Grecaptcha-Token
           in: header
@@ -124,13 +124,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /provision/{name}:
+  /serviceRequest/{name}:
     get:
       tags:
         - Provisioning
-      summary: Get provision status
-      description: Get provision status by name
-      operationId: getProvisionStatus
+      summary: Get status of service request for provision
+      description: Get status of service request for provision
+      operationId: getServiceRequestStatus
       parameters:
         - name: name
           in: path
@@ -158,9 +158,9 @@ paths:
     delete:
       tags:
         - Provisioning
-      summary: Destroy provision
-      description: Destroy provision by name
-      operationId: deleteProvision
+      summary: Service request to destroy provision
+      description: Delete service request and destroy provision by name
+      operationId: deleteServiceRequest
       parameters:
         - name: name
           in: path
@@ -233,7 +233,6 @@ components:
         - ProviderName
         - Purpose
         - Start
-        - Stop
     ProvisionInfo:
       type: object
       properties:

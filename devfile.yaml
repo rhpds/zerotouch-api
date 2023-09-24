@@ -15,6 +15,11 @@ commands:
 - exec:
     commandLine: ./main
     component: runtime
+    env:
+    - name: RESOURCECLAIM_NAMESPACE
+      value: "zerotouch-api-dev"
+    - name: RECAPTCHA_DISABLED
+      value: "true"  
     group:
       isDefault: true
       kind: run

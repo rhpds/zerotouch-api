@@ -29,7 +29,7 @@ type CatalogItemList struct {
 type ResourceClaimParameterValues struct {
 	Purpose        string `json:"purpose"`
 	StartTimeStamp string `json:"start_timestamp"`
-	StopTimeStamp  string `json:"stop_timestamp"`
+	StopTimeStamp  string `json:"stop_timestamp,omitempty"`
 }
 
 type ResourceClaimProvider struct {

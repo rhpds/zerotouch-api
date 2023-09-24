@@ -1,0 +1,39 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: zerotouch-api-dev
+  namespace: zerotouch-api-dev
+rules:
+- apiGroups:
+  - babylon.gpte.redhat.com
+  resources:
+  - catalogitems
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - poolboy.gpte.redhat.com
+  resources:
+  - resourceclaims
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: zerotouch-api-dev
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: zerotouch-api-dev
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: zerotouch-api-dev
