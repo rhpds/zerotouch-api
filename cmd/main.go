@@ -16,6 +16,7 @@ import (
 	"github.com/rhpds/zerotouch-api/cmd/handlers"
 	"github.com/rhpds/zerotouch-api/cmd/log"
 	"github.com/rhpds/zerotouch-api/cmd/models"
+	"github.com/rhpds/zerotouch-api/cmd/ratings"
 )
 
 func main() {
@@ -144,6 +145,16 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 			"recaptchaConfig.Debug", fmt.Sprintf("%v", recaptchaConfig.Disabled),
 		)
 	}
+
+	//
+	// Create Rating API client
+	//
+	ratingsClient, err := ratings.NewClient(
+		"http://babylon-ratings.babylon-ratings.svc.cluster.local:8080",
+	)
+	if err != nil {
+		log.Err.Fatal("Can't create Rating API client - ", err)
+	}
 	//
 	// Create Handler
 	//
@@ -151,6 +162,7 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 		catalogItemsController,
 		resourceClaimsController,
 		&recaptchaConfig,
+		ratingsClient,
 	)
 
 	strictHandler := handlers.NewStrictHandler(catalogItemsHandler, nil)

@@ -178,6 +178,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /ratings/{name}:
+    get:
+      tags:
+        - ratings
+      summary: Get Catalog Item ratings
+      description: Get Catalog Item ratings
+      operationId: getRating
+      parameters:
+        - name: name
+          in: path
+          description: Catalog Item name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogItemRating"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
   schemas:
     CatalogItem:
@@ -208,6 +235,18 @@ components:
         - Description
         - DescriptionFormat
         - Provider
+    CatalogItemRating:
+      type: object
+      properties:
+        RatingScore:
+          type: string
+          example: "4.5"
+        TotalRatings:
+          type: string
+          example: "15"
+      required:
+        - RatingScore
+        - TotalRatings
     ProvisionParams:
       type: object
       properties:
