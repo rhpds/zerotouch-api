@@ -149,9 +149,13 @@ func mainRouter(swagger *openapi3.T) http.Handler {
 	//
 	// Create Rating API client
 	//
-	ratingsClient, err := ratings.NewClient(
-		"http://babylon-ratings.babylon-ratings.svc.cluster.local:8080",
-	)
+	ratings_api := os.Getenv("RATINGS_API")
+	if ratings_api == "" {
+		log.Err.Fatal("RATINGS_API not set, exiting")
+	}
+	log.Logger.Info("Using RATINGS_API: " + ratings_api)
+
+	ratingsClient, err := ratings.NewClient(ratings_api)
 	if err != nil {
 		log.Err.Fatal("Can't create Rating API client - ", err)
 	}

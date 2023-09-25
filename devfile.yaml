@@ -20,6 +20,8 @@ commands:
       value: "zerotouch-api-dev"
     - name: RECAPTCHA_DISABLED
       value: "true"  
+    - name: RATINGS_API
+      value: "http://babylon-ratings.babylon-ratings.svc.cluster.local:8080"
     group:
       isDefault: true
       kind: run
