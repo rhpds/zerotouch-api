@@ -125,3 +125,18 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 		LifespanEnd:    rc.Status.Lifespan.End,
 	}, ok, nil
 }
+
+func (c *ResourceClaimsController) GetUUID(name string) ([]string, error) {
+	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("%s not found", name)
+	}
+
+	rc := item.(*v1.ResourceClaim)
+
+	return findUUIDs(&rc.Status), nil
+}

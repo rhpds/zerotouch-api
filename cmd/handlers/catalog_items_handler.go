@@ -260,12 +260,22 @@ func (h *CatalogItemsHandler) CreateRating(
 		rating.Useful = *request.Body.Useful
 	}
 
-	_, err := h.ratingsClient.SetRating(request.Body.ProvisionId, rating)
+	uuids, err := h.rcController.GetUUID(request.Body.ProvisionName)
 	if err != nil {
 		return CreateRating500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}), nil
+	}
+
+	for _, id := range uuids {
+		_, err = h.ratingsClient.SetRating(id, rating)
+		if err != nil {
+			return CreateRating500JSONResponse(Error{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}), nil
+		}
 	}
 
 	return CreateRating201Response{}, nil

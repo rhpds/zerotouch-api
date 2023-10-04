@@ -273,7 +273,7 @@ components:
     RatingDetails:
       type: object
       properties:
-        ProvisionId:
+        ProvisionName:
           type: string
           example: "a904e6ba-ab62-4a16-9581-9f93d4720188"
         Email:
@@ -289,7 +289,7 @@ components:
           type: string
           example: "yes"
       required:
-        - ProvisionId
+        - ProvisionName
         - Email
     ProvisionParams:
       type: object
