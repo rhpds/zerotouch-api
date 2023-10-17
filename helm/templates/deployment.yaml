@@ -30,6 +30,8 @@ spec:
           value: {{ .Values.googleRecaptcha.threshold | quote }}
         - name: RECAPTCHA_AUTH_KEY
           value: {{ .Values.googleRecaptcha.authKey | quote }}
+        - name: RATINGS_API
+          value: {{ .Values.ratingsApi | quote }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}

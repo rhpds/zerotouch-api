@@ -49,6 +49,8 @@ babylon:
 poolboy:
   apiGroup: poolboy.gpte.redhat.com
 
+ratingsApi: "http://babylon-ratings.babylon-ratings.svc.cluster.local:8080"
+
 resources:
   limits:
     cpu: 1

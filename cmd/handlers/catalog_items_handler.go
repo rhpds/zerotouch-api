@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/rhpds/zerotouch-api/cmd/log"
 	"github.com/rhpds/zerotouch-api/cmd/models"
+	"github.com/rhpds/zerotouch-api/cmd/ratings"
 	"github.com/rhpds/zerotouch-api/cmd/recaptcha"
 )
 
@@ -23,17 +25,20 @@ type CatalogItemsHandler struct {
 	catalogItemsController *models.CatalogItemsController
 	rcController           *models.ResourceClaimsController
 	recaptchaConfig        *RecaptchaConfig
+	ratingsClient          *ratings.RatingClient
 }
 
 func NewCatalogItemsHandler(
 	catalogItemsController *models.CatalogItemsController,
 	rcController *models.ResourceClaimsController,
 	recaptchaConfig *RecaptchaConfig,
+	ratingsClient *ratings.RatingClient,
 ) *CatalogItemsHandler {
 	return &CatalogItemsHandler{
 		catalogItemsController: catalogItemsController,
 		rcController:           rcController,
 		recaptchaConfig:        recaptchaConfig,
+		ratingsClient:          ratingsClient,
 	}
 }
 
@@ -215,6 +220,65 @@ func (h *CatalogItemsHandler) Health(
 	return Health200JSONResponse{
 		Status: &status,
 	}, nil
+}
+
+func (h *CatalogItemsHandler) GetRating(
+	ctx context.Context,
+	request GetRatingRequestObject,
+) (GetRatingResponseObject, error) {
+	rating, err := h.ratingsClient.GetRatings(request.Name)
+	if err != nil {
+		return GetRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	return GetRating200JSONResponse{
+		RatingScore:  fmt.Sprintf("%.1f", rating.RatingScore),
+		TotalRatings: strconv.Itoa(rating.TotalRatings),
+	}, nil
+}
+
+func (h *CatalogItemsHandler) CreateRating(
+	ctx context.Context,
+	request CreateRatingRequestObject,
+) (CreateRatingResponseObject, error) {
+	rating := ratings.NewRating{
+		Email: request.Body.Email,
+	}
+
+	if request.Body.Rating != nil {
+		rating.Rating = *request.Body.Rating
+	}
+
+	if request.Body.Comment != nil {
+		rating.Comment = *request.Body.Comment
+	}
+
+	if request.Body.Useful != nil {
+		rating.Useful = *request.Body.Useful
+	}
+
+	uuids, err := h.rcController.GetUUID(request.Body.ProvisionName)
+	if err != nil {
+		return CreateRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	for _, id := range uuids {
+		_, err = h.ratingsClient.SetRating(id, rating)
+		if err != nil {
+			return CreateRating500JSONResponse(Error{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}), nil
+		}
+	}
+
+	return CreateRating201Response{}, nil
 }
 
 // Helpers

@@ -38,6 +38,12 @@ type CatalogItem struct {
 	Id                string `json:"id"`
 }
 
+// CatalogItemRating defines model for CatalogItemRating.
+type CatalogItemRating struct {
+	RatingScore  string `json:"RatingScore"`
+	TotalRatings string `json:"TotalRatings"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	// Code Error code
@@ -73,6 +79,15 @@ type ProvisionStatus struct {
 	State               string  `json:"state"`
 }
 
+// RatingDetails defines model for RatingDetails.
+type RatingDetails struct {
+	Comment       *string `json:"Comment,omitempty"`
+	Email         string  `json:"Email"`
+	ProvisionName string  `json:"ProvisionName"`
+	Rating        *int    `json:"Rating,omitempty"`
+	Useful        *string `json:"Useful,omitempty"`
+}
+
 // Status defines model for Status.
 type Status struct {
 	Message *string       `json:"message,omitempty"`
@@ -88,6 +103,9 @@ type CreateServiceRequestParams struct {
 	XGrecaptchaToken *string `json:"X-Grecaptcha-Token,omitempty"`
 }
 
+// CreateRatingJSONRequestBody defines body for CreateRating for application/json ContentType.
+type CreateRatingJSONRequestBody = RatingDetails
+
 // CreateServiceRequestJSONRequestBody defines body for CreateServiceRequest for application/json ContentType.
 type CreateServiceRequestJSONRequestBody = ProvisionParams
 
@@ -102,6 +120,12 @@ type ServerInterface interface {
 	// Health check
 	// (GET /health)
 	Health(w http.ResponseWriter, r *http.Request)
+	// Create a new rating for a provisioned item
+	// (POST /ratings)
+	CreateRating(w http.ResponseWriter, r *http.Request)
+	// Get Catalog Item ratings
+	// (GET /ratings/{name})
+	GetRating(w http.ResponseWriter, r *http.Request, name string)
 	// Create a service request for a new provision
 	// (POST /serviceRequest)
 	CreateServiceRequest(w http.ResponseWriter, r *http.Request, params CreateServiceRequestParams)
@@ -132,6 +156,18 @@ func (_ Unimplemented) GetCatalogItem(w http.ResponseWriter, r *http.Request, na
 // Health check
 // (GET /health)
 func (_ Unimplemented) Health(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create a new rating for a provisioned item
+// (POST /ratings)
+func (_ Unimplemented) CreateRating(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get Catalog Item ratings
+// (GET /ratings/{name})
+func (_ Unimplemented) GetRating(w http.ResponseWriter, r *http.Request, name string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -209,6 +245,47 @@ func (siw *ServerInterfaceWrapper) Health(w http.ResponseWriter, r *http.Request
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Health(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// CreateRating operation middleware
+func (siw *ServerInterfaceWrapper) CreateRating(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateRating(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// GetRating operation middleware
+func (siw *ServerInterfaceWrapper) GetRating(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "name" -------------
+	var name string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "name", runtime.ParamLocationPath, chi.URLParam(r, "name"), &name)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "name", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetRating(w, r, name)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -434,6 +511,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/health", wrapper.Health)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/ratings", wrapper.CreateRating)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/ratings/{name}", wrapper.GetRating)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/serviceRequest", wrapper.CreateServiceRequest)
 	})
 	r.Group(func(r chi.Router) {
@@ -508,6 +591,57 @@ type Health200JSONResponse Status
 func (response Health200JSONResponse) VisitHealthResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CreateRatingRequestObject struct {
+	Body *CreateRatingJSONRequestBody
+}
+
+type CreateRatingResponseObject interface {
+	VisitCreateRatingResponse(w http.ResponseWriter) error
+}
+
+type CreateRating201Response struct {
+}
+
+func (response CreateRating201Response) VisitCreateRatingResponse(w http.ResponseWriter) error {
+	w.WriteHeader(201)
+	return nil
+}
+
+type CreateRating500JSONResponse Error
+
+func (response CreateRating500JSONResponse) VisitCreateRatingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRatingRequestObject struct {
+	Name string `json:"name"`
+}
+
+type GetRatingResponseObject interface {
+	VisitGetRatingResponse(w http.ResponseWriter) error
+}
+
+type GetRating200JSONResponse CatalogItemRating
+
+func (response GetRating200JSONResponse) VisitGetRatingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetRating500JSONResponse Error
+
+func (response GetRating500JSONResponse) VisitGetRatingResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(500)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -634,6 +768,12 @@ type StrictServerInterface interface {
 	// Health check
 	// (GET /health)
 	Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error)
+	// Create a new rating for a provisioned item
+	// (POST /ratings)
+	CreateRating(ctx context.Context, request CreateRatingRequestObject) (CreateRatingResponseObject, error)
+	// Get Catalog Item ratings
+	// (GET /ratings/{name})
+	GetRating(ctx context.Context, request GetRatingRequestObject) (GetRatingResponseObject, error)
 	// Create a service request for a new provision
 	// (POST /serviceRequest)
 	CreateServiceRequest(ctx context.Context, request CreateServiceRequestRequestObject) (CreateServiceRequestResponseObject, error)
@@ -748,6 +888,63 @@ func (sh *strictHandler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateRating operation middleware
+func (sh *strictHandler) CreateRating(w http.ResponseWriter, r *http.Request) {
+	var request CreateRatingRequestObject
+
+	var body CreateRatingJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateRating(ctx, request.(CreateRatingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateRating")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateRatingResponseObject); ok {
+		if err := validResponse.VisitCreateRatingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetRating operation middleware
+func (sh *strictHandler) GetRating(w http.ResponseWriter, r *http.Request, name string) {
+	var request GetRatingRequestObject
+
+	request.Name = name
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetRating(ctx, request.(GetRatingRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetRating")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetRatingResponseObject); ok {
+		if err := validResponse.VisitGetRatingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CreateServiceRequest operation middleware
 func (sh *strictHandler) CreateServiceRequest(w http.ResponseWriter, r *http.Request, params CreateServiceRequestParams) {
 	var request CreateServiceRequestRequestObject
@@ -836,32 +1033,36 @@ func (sh *strictHandler) GetServiceRequestStatus(w http.ResponseWriter, r *http.
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"2/VfAQAA//+xBE1CrxcAAA==",
+	"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",
+	"HQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
