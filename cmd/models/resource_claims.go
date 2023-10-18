@@ -25,6 +25,7 @@ type ResourceClaimParameters struct {
 	Purpose      string
 	Start        string
 	Stop         string
+	Lifespan     *string
 }
 
 type ResourceClaimStatus struct {
@@ -69,6 +70,13 @@ func NewResourceClaimsController(
 func (c *ResourceClaimsController) CreateResourceClaim(
 	parameters ResourceClaimParameters,
 ) (ResourceClaim, error) {
+	var lifespan *v1.ResourceClaimSpecLifespan = nil
+	if parameters.Lifespan != nil {
+		lifespan = &v1.ResourceClaimSpecLifespan{
+			End: *parameters.Lifespan,
+		}
+	}
+
 	rc := &v1.ResourceClaim{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: parameters.Name,
@@ -82,6 +90,7 @@ func (c *ResourceClaimsController) CreateResourceClaim(
 					StopTimeStamp:  parameters.Stop,
 				},
 			},
+			Lifespan: lifespan,
 		},
 	}
 
