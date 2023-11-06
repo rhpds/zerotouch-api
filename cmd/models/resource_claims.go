@@ -135,7 +135,7 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 	}, ok, nil
 }
 
-func (c *ResourceClaimsController) GetUUID(name string) ([]string, error) {
+func (c *ResourceClaimsController) GetUID(name string) (*string, error) {
 	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
 	if err != nil {
 		return nil, err
@@ -147,5 +147,5 @@ func (c *ResourceClaimsController) GetUUID(name string) ([]string, error) {
 
 	rc := item.(*v1.ResourceClaim)
 
-	return findUUIDs(&rc.Status), nil
+	return (*string)(&rc.ObjectMeta.UID), nil
 }

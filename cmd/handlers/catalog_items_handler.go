@@ -55,7 +55,7 @@ func (h *CatalogItemsHandler) ListCatalogItems(
 			DisplayName:       v.DisplayName,
 			Description:       v.Description,
 			DescriptionFormat: v.DescriptionFormat,
-			Id:                v.Id,
+			Id:                v.AssetUUID,
 			Provider:          v.Provider,
 		})
 	}
@@ -86,7 +86,7 @@ func (h *CatalogItemsHandler) GetCatalogItem(
 		DisplayName:       catalogItem.DisplayName,
 		Description:       catalogItem.Description,
 		DescriptionFormat: catalogItem.DescriptionFormat,
-		Id:                catalogItem.Id,
+		Id:                catalogItem.AssetUUID,
 		Provider:          catalogItem.Provider,
 	}), nil
 }
@@ -123,11 +123,10 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		)
 
 		return CreateServiceRequest500JSONResponse(Error{
-			Code: http.StatusInternalServerError,
+			Code:    http.StatusInternalServerError,
 			Message: fmt.Sprintf("Provider %s not found", request.Body.ProviderName),
 		}), nil
 	}
-
 
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
@@ -142,7 +141,7 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		lifespanEnd := request.Body.Start
 		lifespanEnd = lifespanEnd.Add(lifespanDuration)
 		lifespan := lifespanEnd.Format(time.RFC3339)
-		
+
 		rc.Lifespan = &lifespan
 	}
 
@@ -263,7 +262,36 @@ func (h *CatalogItemsHandler) GetRating(
 	ctx context.Context,
 	request GetRatingRequestObject,
 ) (GetRatingResponseObject, error) {
-	rating, err := h.ratingsClient.GetRatings(request.Name)
+
+	catalogItem, found, err := h.catalogItemsController.GetByName(request.Name)
+	if err != nil {
+		log.Logger.Error(
+			"can't create rating",
+			"provision name", request.Name,
+			"error", err.Error(),
+		)
+
+		return GetRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	if !found {
+		log.Logger.Error(
+			"can't create rating",
+			"provision name", request.Name,
+			"provider not found", request.Name,
+		)
+
+		return GetRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: fmt.Sprintf("Provider %s not found", request.Name),
+		}), nil
+	}
+
+
+	rating, err := h.ratingsClient.GetRatings(catalogItem.AssetUUID)
 	if err != nil {
 		return GetRating500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
@@ -297,7 +325,7 @@ func (h *CatalogItemsHandler) CreateRating(
 		rating.Useful = *request.Body.Useful
 	}
 
-	uuids, err := h.rcController.GetUUID(request.Body.ProvisionName)
+	uid, err := h.rcController.GetUID(request.Body.ProvisionName)
 	if err != nil {
 		return CreateRating500JSONResponse(Error{
 			Code:    http.StatusInternalServerError,
@@ -305,14 +333,14 @@ func (h *CatalogItemsHandler) CreateRating(
 		}), nil
 	}
 
-	for _, id := range uuids {
-		_, err = h.ratingsClient.SetRating(id, rating)
-		if err != nil {
-			return CreateRating500JSONResponse(Error{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}), nil
-		}
+	rating.RequestID = *uid
+
+	_, err = h.ratingsClient.SetRating(rating)
+	if err != nil {
+		return CreateRating500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
 
 	return CreateRating201Response{}, nil
