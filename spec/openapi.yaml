@@ -281,7 +281,7 @@ components:
           example: "user@server.com"
         Rating:
           type: integer
-          example: 4
+          example: 40
         Comment:
           type: string
           example: "My comment"
@@ -291,6 +291,7 @@ components:
       required:
         - ProvisionName
         - Email
+        - Rating
     ProvisionParams:
       type: object
       properties:

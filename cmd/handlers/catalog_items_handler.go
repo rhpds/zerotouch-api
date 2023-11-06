@@ -311,10 +311,7 @@ func (h *CatalogItemsHandler) CreateRating(
 ) (CreateRatingResponseObject, error) {
 	rating := ratings.NewRating{
 		Email: request.Body.Email,
-	}
-
-	if request.Body.Rating != nil {
-		rating.Rating = *request.Body.Rating
+		Rating: request.Body.Rating,
 	}
 
 	if request.Body.Comment != nil {
