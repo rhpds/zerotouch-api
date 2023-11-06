@@ -3,6 +3,9 @@ package models
 import (
 	"context"
 	"strings"
+	"strconv"
+	"fmt"
+	"time"
 
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
@@ -24,6 +27,7 @@ type CatalogItemInfo struct {
 	DescriptionFormat string
 	Id                string
 	Provider          string
+	DefaultLifespan   string
 }
 
 func NewCatalogItemsController(
@@ -78,7 +82,9 @@ func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
 func (c *CatalogItemsController) findKey(name string) string {
 	keys := c.store.ListKeys()
 	for _, key := range keys {
-		if strings.Contains(strings.ToLower(key), strings.ToLower(name)) {
+		strSlice := strings.Split(key, "/")
+		providerName := strSlice[len(strSlice)-1]
+		if 0 == strings.Compare(strings.ToLower(providerName), strings.ToLower(name)) {
 			return key
 		}
 	}
@@ -101,5 +107,29 @@ func (c *CatalogItemsController) GetByName(name string) (CatalogItemInfo, bool, 
 		DescriptionFormat: item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
 		Id:                item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
 		Provider:          item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
+		DefaultLifespan:   item.(*v1.CatalogItem).Spec.Lifespan.Default,
 	}, true, nil
+}
+
+func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
+
+	var duration time.Duration
+	lifespan := ci.DefaultLifespan
+	
+	duration, err := time.ParseDuration(lifespan)
+	if err == nil {
+		return duration, nil
+	}
+
+	value, err := strconv.ParseInt(lifespan[:len(lifespan)-1], 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("unknown value \"%s\" in duration \"%s\"", lifespan[:len(lifespan)-1], lifespan)
+	}
+
+	unit := lifespan[len(lifespan) - 1]
+	if unit != 'd' {
+		return duration, fmt.Errorf("unknown unit \"%c\" in duration \"%s\"", unit, lifespan)
+	}
+	
+	return time.ParseDuration(fmt.Sprintf("%dh", 24 * value)) 
 }

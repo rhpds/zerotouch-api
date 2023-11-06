@@ -101,12 +101,49 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		stop = stopTimeStamp.UTC().Format(time.RFC3339)
 	}
 
+	catalogItem, found, err := h.catalogItemsController.GetByName(request.Body.ProviderName)
+	if err != nil {
+		log.Logger.Error(
+			"can't create provision",
+			"provision name", request.Body.Name,
+			"error", err.Error(),
+		)
+
+		return CreateServiceRequest500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
+	}
+
+	if !found {
+		log.Logger.Error(
+			"can't create provision",
+			"provision name", request.Body.Name,
+			"provider not found", request.Body.ProviderName,
+		)
+
+		return CreateServiceRequest500JSONResponse(Error{
+			Code: http.StatusInternalServerError,
+			Message: fmt.Sprintf("Provider %s not found", request.Body.ProviderName),
+		}), nil
+	}
+
+
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
 		Purpose:      request.Body.Purpose,
 		Start:        request.Body.Start.UTC().Format(time.RFC3339),
 		Stop:         stop,
+	}
+
+	lifespanDuration, err := catalogItem.GetDefaultLifespan()
+	if err == nil {
+		lifespanEnd := request.Body.Start
+		lifespanEnd = lifespanEnd.Add(lifespanDuration)
+		lifespan := lifespanEnd.Format(time.RFC3339)
+		
+		rc.Lifespan = &lifespan
 	}
 
 	var token string

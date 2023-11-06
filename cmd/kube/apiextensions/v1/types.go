@@ -7,11 +7,22 @@ import (
 // -----------------------------------------------------------------------------
 // CatalogItem
 // -----------------------------------------------------------------------------
+type CatalogItemLifespan struct {
+	Default         string `json:"default"`
+	Maximus         string `json:"maximum"`
+	RelativeMaximum string `json:"relativeMaximum"`
+}
+
+type CatalogItemSpec struct {
+	Lifespan CatalogItemLifespan `json:"lifespan"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type CatalogItem struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec CatalogItemSpec `json:"spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -53,6 +64,10 @@ type ResourceClaimStatusLifespan struct {
 	End string `json:"end"`
 }
 
+type ResourceClaimSpecLifespan struct {
+	End string `json:"end"`
+}
+
 type ResourceState struct {
 	State map[string]interface{} `json:"state"`
 }
@@ -64,8 +79,10 @@ type ResourceClaimStatus struct {
 	Lifespan  ResourceClaimStatusLifespan `json:"lifespan"`
 }
 
+// +k8s:deepcopy-gen=true
 type ResourceClaimSpec struct {
-	Provider ResourceClaimProvider `json:"provider"`
+	Lifespan *ResourceClaimSpecLifespan `json:"lifespan,omitempty"`
+	Provider ResourceClaimProvider     `json:"provider"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
