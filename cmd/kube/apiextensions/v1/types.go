@@ -68,13 +68,8 @@ type ResourceClaimSpecLifespan struct {
 	End string `json:"end"`
 }
 
-type ResourceState struct {
-	State map[string]interface{} `json:"state"`
-}
-
 // +k8s:deepcopy-gen=true
 type ResourceClaimStatus struct {
-	Resources []ResourceState             `json:"resources"`
 	Summary   ResourceClaimStatusSummary  `json:"summary"`
 	Lifespan  ResourceClaimStatusLifespan `json:"lifespan"`
 }

@@ -2,9 +2,9 @@ package models
 
 import (
 	"context"
-	"strings"
-	"strconv"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"k8s.io/client-go/tools/cache"
@@ -25,7 +25,7 @@ type CatalogItemInfo struct {
 	DisplayName       string
 	Description       string
 	DescriptionFormat string
-	Id                string
+	AssetUUID         string
 	Provider          string
 	DefaultLifespan   string
 }
@@ -67,7 +67,7 @@ func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
 			DisplayName:       anotations["babylon.gpte.redhat.com/displayName"],
 			Description:       anotations["babylon.gpte.redhat.com/description"],
 			DescriptionFormat: anotations["babylon.gpte.redhat.com/descriptionFormat"],
-			Id:                labels["gpte.redhat.com/asset-uuid"],
+			AssetUUID:         labels["gpte.redhat.com/asset-uuid"],
 			Provider:          labels["babylon.gpte.redhat.com/Provider"],
 		})
 	}
@@ -105,17 +105,16 @@ func (c *CatalogItemsController) GetByName(name string) (CatalogItemInfo, bool, 
 		DisplayName:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
 		Description:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
 		DescriptionFormat: item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
-		Id:                item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
+		AssetUUID:         item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
 		Provider:          item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
 		DefaultLifespan:   item.(*v1.CatalogItem).Spec.Lifespan.Default,
 	}, true, nil
 }
 
 func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
-
 	var duration time.Duration
 	lifespan := ci.DefaultLifespan
-	
+
 	duration, err := time.ParseDuration(lifespan)
 	if err == nil {
 		return duration, nil
@@ -126,10 +125,10 @@ func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
 		return 0, fmt.Errorf("unknown value \"%s\" in duration \"%s\"", lifespan[:len(lifespan)-1], lifespan)
 	}
 
-	unit := lifespan[len(lifespan) - 1]
+	unit := lifespan[len(lifespan)-1]
 	if unit != 'd' {
 		return duration, fmt.Errorf("unknown unit \"%c\" in duration \"%s\"", unit, lifespan)
 	}
-	
-	return time.ParseDuration(fmt.Sprintf("%dh", 24 * value)) 
+
+	return time.ParseDuration(fmt.Sprintf("%dh", 24*value))
 }

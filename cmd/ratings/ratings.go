@@ -14,7 +14,7 @@ import (
 
 const (
 	catalogItemRating = "/api/ratings/v1/catalogitem/"
-	provisionsRatings = "/api/ratings/v1/provisions/"
+	provisionsRatings = "/api/ratings/v1/request/"
 )
 
 type RatingClient struct {
@@ -22,8 +22,9 @@ type RatingClient struct {
 }
 
 type NewRating struct {
+	RequestID string `json:"request_id"`
 	Email   string `json:"email"`
-	Rating  int    `json:"rating,omitempty"`
+	Rating  int    `json:"rating"`
 	Comment string `json:"comment,omitempty"`
 	Useful  string `json:"useful,omitempty"`
 }
@@ -83,7 +84,7 @@ func (c *RatingClient) GetRatings(catalogItemName string) (*Rating, error) {
 	return &rating, nil
 }
 
-func (c *RatingClient) SetRating(provisionUuid string, rating NewRating) (bool, error) {
+func (c *RatingClient) SetRating(rating NewRating) (bool, error) {
 	byteRating, err := json.Marshal(rating)
 	if err != nil {
 		return false, err
@@ -94,7 +95,7 @@ func (c *RatingClient) SetRating(provisionUuid string, rating NewRating) (bool, 
 			"%s%s%s",
 			c.ratingsAPI,
 			provisionsRatings,
-			provisionUuid,
+			rating.RequestID,
 		),
 		"application/json",
 		bytes.NewBuffer(byteRating),
