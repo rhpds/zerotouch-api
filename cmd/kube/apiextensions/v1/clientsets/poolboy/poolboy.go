@@ -89,6 +89,12 @@ type ResourceClaimsInterface interface {
 	Delete(name string, options *metav1.DeleteOptions) error
 }
 
+type ResourceClaimEvents struct {
+	AddEvent    func(rc *v1.ResourceClaim)
+	UpdateEvent func(oldRC, newRC *v1.ResourceClaim)
+	DeleteEvent func(rc *v1.ResourceClaim)
+}
+
 type resourceClaimsClient struct {
 	restClient rest.Interface
 	ns         string
@@ -170,7 +176,11 @@ func (c *resourceClaimsClient) Delete(name string, opts *metav1.DeleteOptions) e
 		Error()
 }
 
-func WatchResources(clientSet PoolboyResourcesInterface, namespace string) cache.Store {
+func WatchResourceClaims(
+	clientSet PoolboyResourcesInterface,
+	namespace string,
+	eventHandlers ResourceClaimEvents,
+) cache.Store {
 	resourceClaimStore, resourceClaimController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
@@ -182,7 +192,16 @@ func WatchResources(clientSet PoolboyResourcesInterface, namespace string) cache
 		},
 		&v1.ResourceClaim{},
 		0,
-		cache.ResourceEventHandlerFuncs{},
+		cache.ResourceEventHandlerFuncs{
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				if eventHandlers.UpdateEvent != nil {
+					eventHandlers.UpdateEvent(
+						oldObj.(*v1.ResourceClaim),
+						newObj.(*v1.ResourceClaim),
+					)
+				}
+			},
+		},
 	)
 
 	// TODO: Provide chan object to stop the controller

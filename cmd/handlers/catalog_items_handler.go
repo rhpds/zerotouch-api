@@ -34,12 +34,28 @@ func NewCatalogItemsHandler(
 	recaptchaConfig *RecaptchaConfig,
 	ratingsClient *ratings.RatingClient,
 ) *CatalogItemsHandler {
-	return &CatalogItemsHandler{
+	catalogItemHandler := CatalogItemsHandler{
 		catalogItemsController: catalogItemsController,
 		rcController:           rcController,
 		recaptchaConfig:        recaptchaConfig,
 		ratingsClient:          ratingsClient,
 	}
+
+	// Subscribing on ResourceClaims status updates
+	catalogItemHandler.rcController.OnStatusUpdate = catalogItemHandler.OnResourceClaimStatusUpdate
+
+	return &catalogItemHandler
+}
+
+func (h *CatalogItemsHandler) OnResourceClaimStatusUpdate(status string) {
+
+	// new_lifespan_end = time.now() + catalogitem.spec.lifespan.default
+	//
+	// new_lifespan_end < status.lifespan.start + catalogitem.spec.lifespan.maximum
+	// new_lifespan_end < datetime.now(UTC) + lifespan.relativeMaximum
+
+
+	fmt.Printf("Status updated to %s\n", status)
 }
 
 func (h *CatalogItemsHandler) ListCatalogItems(
@@ -262,7 +278,6 @@ func (h *CatalogItemsHandler) GetRating(
 	ctx context.Context,
 	request GetRatingRequestObject,
 ) (GetRatingResponseObject, error) {
-
 	catalogItem, found, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
 		log.Logger.Error(
@@ -290,7 +305,6 @@ func (h *CatalogItemsHandler) GetRating(
 		}), nil
 	}
 
-
 	rating, err := h.ratingsClient.GetRatings(catalogItem.AssetUUID)
 	if err != nil {
 		return GetRating500JSONResponse(Error{
@@ -310,7 +324,7 @@ func (h *CatalogItemsHandler) CreateRating(
 	request CreateRatingRequestObject,
 ) (CreateRatingResponseObject, error) {
 	rating := ratings.NewRating{
-		Email: request.Body.Email,
+		Email:  request.Body.Email,
 		Rating: request.Body.Rating,
 	}
 

@@ -17,6 +17,7 @@ type ResourceClaimsController struct {
 	clientSet *poolboy.PoolboyResourcesClient
 	store     cache.Store
 	namespace string
+	OnStatusUpdate func(status string)
 }
 
 type ResourceClaimParameters struct {
@@ -48,23 +49,31 @@ func NewResourceClaimsController(
 	namespace string,
 	ctx context.Context,
 ) (*ResourceClaimsController, error) {
+	rcController := ResourceClaimsController{
+		namespace: namespace,
+	}
+
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
 	}
 
-	poolboyClientSet, err := poolboy.NewForConfig(config, ctx)
+	rcController.clientSet, err = poolboy.NewForConfig(config, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	store := poolboy.WatchResources(poolboyClientSet, namespace)
+	rcEventHandlers := poolboy.ResourceClaimEvents {
+		UpdateEvent: rcController.OnResourceClaimUpdate,
+	}
 
-	return &ResourceClaimsController{
-		clientSet: poolboyClientSet,
-		store:     store,
-		namespace: namespace,
-	}, nil
+	rcController.store = poolboy.WatchResourceClaims(
+		rcController.clientSet,
+		namespace,
+		rcEventHandlers,
+	)
+
+	return &rcController, nil
 }
 
 func (c *ResourceClaimsController) CreateResourceClaim(
@@ -148,4 +157,15 @@ func (c *ResourceClaimsController) GetUID(name string) (*string, error) {
 	rc := item.(*v1.ResourceClaim)
 
 	return (*string)(&rc.ObjectMeta.UID), nil
+}
+
+// -----------------------------------------------------------------------------
+// Event Handlers
+// -----------------------------------------------------------------------------
+func (c *ResourceClaimsController) OnResourceClaimUpdate(oldRC, newRC *v1.ResourceClaim) {
+	if oldRC.Status.Summary.State != newRC.Status.Summary.State {
+		if c.OnStatusUpdate != nil {
+			c.OnStatusUpdate(newRC.Status.Summary.State)
+		}
+	}
 }
