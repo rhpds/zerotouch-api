@@ -46,7 +46,7 @@ spec:
         image: swaggerapi/swagger-ui
         env:
         - name: SWAGGER_JSON_URL
-          value: http://{{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }}/swagger.json
+          value: https://{{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }}/swagger.json
         - name: PORT
           value: "8081"
         - name: VALIDATOR_URL
