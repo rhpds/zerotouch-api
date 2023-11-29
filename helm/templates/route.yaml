@@ -4,6 +4,8 @@ kind: Route
 metadata:
   name: {{ include "zerotouch-api.name" . }}
   namespace: {{ include "zerotouch-api.namespaceName" . }}
+  annotations:
+    cert-utils-operator.redhat-cop.io/certs-from-secret: {{ include "zerotouch-api.name" . }}-tls
   labels:
     {{- include "zerotouch-api.labels" . | nindent 4 }}
 spec:
@@ -13,6 +15,9 @@ spec:
   to:
     kind: Service
     name: {{ include "zerotouch-api.name" . }}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
 
 ---
@@ -21,6 +26,8 @@ kind: Route
 metadata:
   name: swagger-{{ include "zerotouch-api.name" . }}
   namespace: {{ include "zerotouch-api.namespaceName" . }}
+  annotations:
+    cert-utils-operator.redhat-cop.io/certs-from-secret: swagger-{{ include "zerotouch-api.name" . }}-tls
   labels:
     {{- include "zerotouch-api.labels" . | nindent 4 }}
 spec:
@@ -30,4 +37,58 @@ spec:
   to:
     kind: Service
     name: {{ include "zerotouch-api.name" . }}
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
   wildcardPolicy: None
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "zerotouch-api.name" . }}
+  namespace: {{ include "zerotouch-api.namespaceName" . }}
+  labels:
+    {{- include "zerotouch-api.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - {{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }}
+  duration: 2160h0m0s
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  renewBefore: 360h0m0s
+  secretName: {{ include "zerotouch-api.name" . }}-tls
+  usages:
+  - server auth
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: swagger-{{ include "zerotouch-api.name" . }}
+  namespace: {{ include "zerotouch-api.namespaceName" . }}
+  labels:
+    {{- include "zerotouch-api.labels" . | nindent 4 }}
+spec:
+  dnsNames:
+  - swagger-{{ include "zerotouch-api.namespaceName" . }}.{{ .Values.ingressDomain }} 
+  duration: 2160h0m0s
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  renewBefore: 360h0m0s
+  secretName: swagger-{{ include "zerotouch-api.name" . }}-tls
+  usages:
+  - server auth
+
