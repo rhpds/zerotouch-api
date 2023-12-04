@@ -58,15 +58,15 @@ func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
 	r := make([]CatalogItemInfo, 0, len(items))
 	for _, item := range items {
 		catalogItem := item.(*v1.CatalogItem)
-		anotations := catalogItem.ObjectMeta.Annotations
+		annotations := catalogItem.ObjectMeta.Annotations
 		labels := catalogItem.ObjectMeta.Labels
 
 		r = append(r, CatalogItemInfo{
 			Name:              catalogItem.ObjectMeta.Name,
 			NameSpace:         catalogItem.ObjectMeta.Namespace,
-			DisplayName:       anotations["babylon.gpte.redhat.com/displayName"],
-			Description:       anotations["babylon.gpte.redhat.com/description"],
-			DescriptionFormat: anotations["babylon.gpte.redhat.com/descriptionFormat"],
+			DisplayName:       annotations["babylon.gpte.redhat.com/displayName"],
+			Description:       annotations["babylon.gpte.redhat.com/description"],
+			DescriptionFormat: annotations["babylon.gpte.redhat.com/descriptionFormat"],
 			AssetUUID:         labels["gpte.redhat.com/asset-uuid"],
 			Provider:          labels["babylon.gpte.redhat.com/Provider"],
 		})
@@ -84,7 +84,7 @@ func (c *CatalogItemsController) findKey(name string) string {
 	for _, key := range keys {
 		strSlice := strings.Split(key, "/")
 		providerName := strSlice[len(strSlice)-1]
-		if 0 == strings.Compare(strings.ToLower(providerName), strings.ToLower(name)) {
+		if strings.Compare(strings.ToLower(providerName), strings.ToLower(name)) == 0 {
 			return key
 		}
 	}
