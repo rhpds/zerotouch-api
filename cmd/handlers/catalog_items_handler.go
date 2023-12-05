@@ -47,15 +47,36 @@ func NewCatalogItemsHandler(
 	return &catalogItemHandler
 }
 
-func (h *CatalogItemsHandler) OnResourceClaimStatusUpdate(status string) {
+func (h *CatalogItemsHandler) OnResourceClaimStatusUpdate(details models.ResourceClaimDetails) {
 
 	// new_lifespan_end = time.now() + catalogitem.spec.lifespan.default
 	//
 	// new_lifespan_end < status.lifespan.start + catalogitem.spec.lifespan.maximum
-	// new_lifespan_end < datetime.now(UTC) + lifespan.relativeMaximum
+	// new_lifespan_end < datetime.now(UTC) + catalogitem.spec.lifespan.relativeMaximum
 
+	fmt.Printf("%s: status updated to %s\n", details.Name, details.State)
+	fmt.Printf("Lifespan start: %s\n", details.LifespanStart)
+	fmt.Printf("Lifespan end: %s\n", details.LifespanEnd)
 
-	fmt.Printf("Status updated to %s\n", status)
+	defaultLifespan, _ := h.catalogItemsController.GetDefaultLifespan(details.Provider)
+	newLifespanEnd := time.Now().Add(defaultLifespan)
+	fmt.Printf("new lifespan end: %s\n", newLifespanEnd.Format(time.RFC3339))
+
+	maximumLifespan, _ := h.catalogItemsController.GetMaximumLifespan(details.Provider)
+	lifespanMax, _ := time.Parse(time.RFC3339, details.LifespanStart)
+	lifespanMax = lifespanMax.Add(maximumLifespan)
+	fmt.Printf("lifespan max: %s\n", lifespanMax.Format(time.RFC3339))
+
+	relativeMaximumLifespan, _ := h.catalogItemsController.GetRelativeMaximumLifespan(details.Provider)
+	lifespanRelMax := time.Now().Add(relativeMaximumLifespan)
+	fmt.Printf("lifespan relative max: %s\n", lifespanRelMax.Format(time.RFC3339))
+
+	//	fmt.Printf("lifespan duration: %s\n", defaultLifespan.String())
+	//	fmt.Printf("Maximum lifespan: %s\n", maximumLifespan.String())
+	//	fmt.Printf("Relative Maximum lifespan: %s\n\n", relativeMaximumLifespan.String())
+
+	fmt.Printf("\n")
+
 }
 
 func (h *CatalogItemsHandler) ListCatalogItems(
@@ -117,33 +138,6 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		stop = stopTimeStamp.UTC().Format(time.RFC3339)
 	}
 
-	catalogItem, found, err := h.catalogItemsController.GetByName(request.Body.ProviderName)
-	if err != nil {
-		log.Logger.Error(
-			"can't create provision",
-			"provision name", request.Body.Name,
-			"error", err.Error(),
-		)
-
-		return CreateServiceRequest500JSONResponse(Error{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}), nil
-	}
-
-	if !found {
-		log.Logger.Error(
-			"can't create provision",
-			"provision name", request.Body.Name,
-			"provider not found", request.Body.ProviderName,
-		)
-
-		return CreateServiceRequest500JSONResponse(Error{
-			Code:    http.StatusInternalServerError,
-			Message: fmt.Sprintf("Provider %s not found", request.Body.ProviderName),
-		}), nil
-	}
-
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
@@ -152,14 +146,18 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		Stop:         stop,
 	}
 
-	lifespanDuration, err := catalogItem.GetDefaultLifespan()
-	if err == nil {
-		lifespanEnd := request.Body.Start
-		lifespanEnd = lifespanEnd.Add(lifespanDuration)
-		lifespan := lifespanEnd.Format(time.RFC3339)
-
-		rc.Lifespan = &lifespan
+	defaultLifespan, err := h.catalogItemsController.GetDefaultLifespan(request.Body.ProviderName)
+	if err != nil {
+		return CreateServiceRequest500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
+
+	lifespanEnd := time.Now().Add(defaultLifespan)
+	lifespan := lifespanEnd.Format(time.RFC3339)
+
+	rc.Lifespan = &lifespan
 
 	var token string
 	if request.Params.XGrecaptchaToken != nil {
@@ -231,7 +229,7 @@ func (h *CatalogItemsHandler) GetServiceRequestStatus(
 	ctx context.Context,
 	request GetServiceRequestStatusRequestObject,
 ) (GetServiceRequestStatusResponseObject, error) {
-	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
+	claimInfo, ok, err := h.rcController.GetResourceClaimDetails(request.Name)
 	if err != nil {
 		log.Logger.Error(
 			"can't retrieve provision status",
@@ -249,17 +247,17 @@ func (h *CatalogItemsHandler) GetServiceRequestStatus(
 		return GetServiceRequestStatus404Response{}, nil
 	}
 
-	if claimStatus == nil {
+	if claimInfo == nil {
 		return GetServiceRequestStatus202Response{}, nil
 	}
 
 	return GetServiceRequestStatus200JSONResponse(ProvisionStatus{
-		State:               claimStatus.State,
-		GUID:                claimStatus.GUID,
-		LabUserInterfaceUrl: &claimStatus.LabURL,
-		RuntimeDefault:      claimStatus.RuntimeDefault,
-		RuntimeMaximum:      claimStatus.RuntimeMaximum,
-		LifespanEnd:         claimStatus.LifespanEnd,
+		State:               claimInfo.State,
+		GUID:                claimInfo.GUID,
+		LabUserInterfaceUrl: &claimInfo.LabURL,
+		RuntimeDefault:      claimInfo.RuntimeDefault,
+		RuntimeMaximum:      claimInfo.RuntimeMaximum,
+		LifespanEnd:         claimInfo.LifespanEnd,
 	}), nil
 }
 

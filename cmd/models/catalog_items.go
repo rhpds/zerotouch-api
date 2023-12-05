@@ -20,14 +20,16 @@ type CatalogItemsController struct {
 }
 
 type CatalogItemInfo struct {
-	Name              string
-	NameSpace         string
-	DisplayName       string
-	Description       string
-	DescriptionFormat string
-	AssetUUID         string
-	Provider          string
-	DefaultLifespan   string
+	Name                    string
+	NameSpace               string
+	DisplayName             string
+	Description             string
+	DescriptionFormat       string
+	AssetUUID               string
+	Provider                string
+	DefaultLifespan         string
+	MaximumLifespan         string
+	RelativeMaximumLifespan string
 }
 
 func NewCatalogItemsController(
@@ -91,30 +93,29 @@ func (c *CatalogItemsController) findKey(name string) string {
 	return ""
 }
 
-func (c *CatalogItemsController) GetByName(name string) (CatalogItemInfo, bool, error) {
+func (c *CatalogItemsController) GetByName(name string) (*CatalogItemInfo, bool, error) {
 	key := c.findKey(name)
 
 	item, ok, err := c.store.GetByKey(key)
 	if err != nil || !ok {
-		return CatalogItemInfo{}, false, err
+		return nil, false, err
 	}
 
-	return CatalogItemInfo{
-		Name:              item.(*v1.CatalogItem).ObjectMeta.Name,
-		NameSpace:         item.(*v1.CatalogItem).ObjectMeta.Namespace,
-		DisplayName:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
-		Description:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
-		DescriptionFormat: item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
-		AssetUUID:         item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
-		Provider:          item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
-		DefaultLifespan:   item.(*v1.CatalogItem).Spec.Lifespan.Default,
+	return &CatalogItemInfo{
+		Name:                    item.(*v1.CatalogItem).ObjectMeta.Name,
+		NameSpace:               item.(*v1.CatalogItem).ObjectMeta.Namespace,
+		DisplayName:             item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
+		Description:             item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
+		DescriptionFormat:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
+		AssetUUID:               item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
+		Provider:                item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
+		DefaultLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Default,
+		MaximumLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Maximum,
+		RelativeMaximumLifespan: item.(*v1.CatalogItem).Spec.Lifespan.RelativeMaximum,
 	}, true, nil
 }
 
-func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
-	var duration time.Duration
-	lifespan := ci.DefaultLifespan
-
+func lifespanToDuration(lifespan string) (time.Duration, error) {
 	duration, err := time.ParseDuration(lifespan)
 	if err == nil {
 		return duration, nil
@@ -131,4 +132,43 @@ func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
 	}
 
 	return time.ParseDuration(fmt.Sprintf("%dh", 24*value))
+}
+
+func (c *CatalogItemsController) GetDefaultLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.DefaultLifespan)
+}
+
+func (c *CatalogItemsController) GetMaximumLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.MaximumLifespan)
+}
+
+func (c *CatalogItemsController) GetRelativeMaximumLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.RelativeMaximumLifespan)
 }

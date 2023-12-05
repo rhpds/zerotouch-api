@@ -9,7 +9,7 @@ import (
 // -----------------------------------------------------------------------------
 type CatalogItemLifespan struct {
 	Default         string `json:"default"`
-	Maximus         string `json:"maximum"`
+	Maximum         string `json:"maximum"`
 	RelativeMaximum string `json:"relativeMaximum"`
 }
 
@@ -49,7 +49,7 @@ type ResourceClaimProvider struct {
 }
 
 type ResourceClaimProvisionData struct {
-	GUID   string `json:"guid"`
+	GUID   string `json:"GUID"`
 	LabURL string `json:"lab_ui_url"`
 }
 
@@ -61,7 +61,8 @@ type ResourceClaimStatusSummary struct {
 }
 
 type ResourceClaimStatusLifespan struct {
-	End string `json:"end"`
+	End   string `json:"end"`
+	Start string `json:"start"`
 }
 
 type ResourceClaimSpecLifespan struct {
@@ -70,14 +71,14 @@ type ResourceClaimSpecLifespan struct {
 
 // +k8s:deepcopy-gen=true
 type ResourceClaimStatus struct {
-	Summary   ResourceClaimStatusSummary  `json:"summary"`
-	Lifespan  ResourceClaimStatusLifespan `json:"lifespan"`
+	Summary  ResourceClaimStatusSummary  `json:"summary"`
+	Lifespan ResourceClaimStatusLifespan `json:"lifespan"`
 }
 
 // +k8s:deepcopy-gen=true
 type ResourceClaimSpec struct {
 	Lifespan *ResourceClaimSpecLifespan `json:"lifespan,omitempty"`
-	Provider ResourceClaimProvider     `json:"provider"`
+	Provider ResourceClaimProvider      `json:"provider"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
