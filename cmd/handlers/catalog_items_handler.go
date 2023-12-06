@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rhpds/zerotouch-api/cmd/log"
@@ -34,12 +35,73 @@ func NewCatalogItemsHandler(
 	recaptchaConfig *RecaptchaConfig,
 	ratingsClient *ratings.RatingClient,
 ) *CatalogItemsHandler {
-	return &CatalogItemsHandler{
+	catalogItemHandler := CatalogItemsHandler{
 		catalogItemsController: catalogItemsController,
 		rcController:           rcController,
 		recaptchaConfig:        recaptchaConfig,
 		ratingsClient:          ratingsClient,
 	}
+
+	// Subscribing on ResourceClaims status updates
+	catalogItemHandler.rcController.OnStatusUpdate = catalogItemHandler.OnResourceClaimStatusUpdate
+
+	return &catalogItemHandler
+}
+
+func (h *CatalogItemsHandler) OnResourceClaimStatusUpdate(details models.ResourceClaimDetails) {
+	if strings.ToLower(details.State) != "started" {
+		return
+	}
+
+	defaultLifespan, err := h.catalogItemsController.GetDefaultLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve default lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
+	newLifespanEnd := time.Now().Add(defaultLifespan)
+
+	maximumLifespan, err := h.catalogItemsController.GetMaximumLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve maximum lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
+	lifespanMax, err := time.Parse(time.RFC3339, details.LifespanStart)
+	if err != nil {
+		log.Logger.Error("can't parse lifespan start", "lifespan start", details.LifespanStart, "error", err.Error())
+		return
+	}
+	lifespanMax = lifespanMax.Add(maximumLifespan)
+
+	relativeMaximumLifespan, err := h.catalogItemsController.GetRelativeMaximumLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve relative maximum lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
+	lifespanRelMax := time.Now().Add(relativeMaximumLifespan)
+
+	if newLifespanEnd.After(lifespanMax) {
+		newLifespanEnd = lifespanMax
+	}
+
+	if newLifespanEnd.After(lifespanRelMax) {
+		newLifespanEnd = lifespanRelMax
+	}
+
+	err = h.rcController.UpdateLifespanEnd(details.Name, newLifespanEnd.Format(time.RFC3339))
+	if err != nil {
+		log.Logger.Error(
+			"can't update provision lifespan end",
+			"provision name", details.Name,
+			"error", err.Error(),
+		)
+		return
+	}
+
+	log.Logger.Info(
+		"lifespan end updated",
+		"provision name", details.Name,
+		"new lifespan end", newLifespanEnd.Format(time.RFC3339),
+	)
 }
 
 func (h *CatalogItemsHandler) ListCatalogItems(
@@ -101,33 +163,6 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		stop = stopTimeStamp.UTC().Format(time.RFC3339)
 	}
 
-	catalogItem, found, err := h.catalogItemsController.GetByName(request.Body.ProviderName)
-	if err != nil {
-		log.Logger.Error(
-			"can't create provision",
-			"provision name", request.Body.Name,
-			"error", err.Error(),
-		)
-
-		return CreateServiceRequest500JSONResponse(Error{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}), nil
-	}
-
-	if !found {
-		log.Logger.Error(
-			"can't create provision",
-			"provision name", request.Body.Name,
-			"provider not found", request.Body.ProviderName,
-		)
-
-		return CreateServiceRequest500JSONResponse(Error{
-			Code:    http.StatusInternalServerError,
-			Message: fmt.Sprintf("Provider %s not found", request.Body.ProviderName),
-		}), nil
-	}
-
 	rc := models.ResourceClaimParameters{
 		Name:         request.Body.Name,
 		ProviderName: request.Body.ProviderName,
@@ -136,14 +171,18 @@ func (h *CatalogItemsHandler) CreateServiceRequest(
 		Stop:         stop,
 	}
 
-	lifespanDuration, err := catalogItem.GetDefaultLifespan()
-	if err == nil {
-		lifespanEnd := request.Body.Start
-		lifespanEnd = lifespanEnd.Add(lifespanDuration)
-		lifespan := lifespanEnd.Format(time.RFC3339)
-
-		rc.Lifespan = &lifespan
+	defaultLifespan, err := h.catalogItemsController.GetDefaultLifespan(request.Body.ProviderName)
+	if err != nil {
+		return CreateServiceRequest500JSONResponse(Error{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}), nil
 	}
+
+	lifespanEnd := time.Now().Add(defaultLifespan)
+	lifespan := lifespanEnd.Format(time.RFC3339)
+
+	rc.Lifespan = &lifespan
 
 	var token string
 	if request.Params.XGrecaptchaToken != nil {
@@ -215,7 +254,7 @@ func (h *CatalogItemsHandler) GetServiceRequestStatus(
 	ctx context.Context,
 	request GetServiceRequestStatusRequestObject,
 ) (GetServiceRequestStatusResponseObject, error) {
-	claimStatus, ok, err := h.rcController.GetResourceClaimStatus(request.Name)
+	claimInfo, ok, err := h.rcController.GetResourceClaimDetails(request.Name)
 	if err != nil {
 		log.Logger.Error(
 			"can't retrieve provision status",
@@ -233,17 +272,17 @@ func (h *CatalogItemsHandler) GetServiceRequestStatus(
 		return GetServiceRequestStatus404Response{}, nil
 	}
 
-	if claimStatus == nil {
+	if claimInfo == nil {
 		return GetServiceRequestStatus202Response{}, nil
 	}
 
 	return GetServiceRequestStatus200JSONResponse(ProvisionStatus{
-		State:               claimStatus.State,
-		GUID:                claimStatus.GUID,
-		LabUserInterfaceUrl: &claimStatus.LabURL,
-		RuntimeDefault:      claimStatus.RuntimeDefault,
-		RuntimeMaximum:      claimStatus.RuntimeMaximum,
-		LifespanEnd:         claimStatus.LifespanEnd,
+		State:               claimInfo.State,
+		GUID:                claimInfo.GUID,
+		LabUserInterfaceUrl: &claimInfo.LabURL,
+		RuntimeDefault:      claimInfo.RuntimeDefault,
+		RuntimeMaximum:      claimInfo.RuntimeMaximum,
+		LifespanEnd:         claimInfo.LifespanEnd,
 	}), nil
 }
 
@@ -262,7 +301,6 @@ func (h *CatalogItemsHandler) GetRating(
 	ctx context.Context,
 	request GetRatingRequestObject,
 ) (GetRatingResponseObject, error) {
-
 	catalogItem, found, err := h.catalogItemsController.GetByName(request.Name)
 	if err != nil {
 		log.Logger.Error(
@@ -290,7 +328,6 @@ func (h *CatalogItemsHandler) GetRating(
 		}), nil
 	}
 
-
 	rating, err := h.ratingsClient.GetRatings(catalogItem.AssetUUID)
 	if err != nil {
 		return GetRating500JSONResponse(Error{
@@ -310,7 +347,7 @@ func (h *CatalogItemsHandler) CreateRating(
 	request CreateRatingRequestObject,
 ) (CreateRatingResponseObject, error) {
 	rating := ratings.NewRating{
-		Email: request.Body.Email,
+		Email:  request.Body.Email,
 		Rating: request.Body.Rating,
 	}
 

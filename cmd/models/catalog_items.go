@@ -20,14 +20,16 @@ type CatalogItemsController struct {
 }
 
 type CatalogItemInfo struct {
-	Name              string
-	NameSpace         string
-	DisplayName       string
-	Description       string
-	DescriptionFormat string
-	AssetUUID         string
-	Provider          string
-	DefaultLifespan   string
+	Name                    string
+	NameSpace               string
+	DisplayName             string
+	Description             string
+	DescriptionFormat       string
+	AssetUUID               string
+	Provider                string
+	defaultLifespan         string
+	maximumLifespan         string
+	relativeMaximumLifespan string
 }
 
 func NewCatalogItemsController(
@@ -58,15 +60,15 @@ func (c *CatalogItemsController) ListAll() []CatalogItemInfo {
 	r := make([]CatalogItemInfo, 0, len(items))
 	for _, item := range items {
 		catalogItem := item.(*v1.CatalogItem)
-		anotations := catalogItem.ObjectMeta.Annotations
+		annotations := catalogItem.ObjectMeta.Annotations
 		labels := catalogItem.ObjectMeta.Labels
 
 		r = append(r, CatalogItemInfo{
 			Name:              catalogItem.ObjectMeta.Name,
 			NameSpace:         catalogItem.ObjectMeta.Namespace,
-			DisplayName:       anotations["babylon.gpte.redhat.com/displayName"],
-			Description:       anotations["babylon.gpte.redhat.com/description"],
-			DescriptionFormat: anotations["babylon.gpte.redhat.com/descriptionFormat"],
+			DisplayName:       annotations["babylon.gpte.redhat.com/displayName"],
+			Description:       annotations["babylon.gpte.redhat.com/description"],
+			DescriptionFormat: annotations["babylon.gpte.redhat.com/descriptionFormat"],
 			AssetUUID:         labels["gpte.redhat.com/asset-uuid"],
 			Provider:          labels["babylon.gpte.redhat.com/Provider"],
 		})
@@ -84,37 +86,36 @@ func (c *CatalogItemsController) findKey(name string) string {
 	for _, key := range keys {
 		strSlice := strings.Split(key, "/")
 		providerName := strSlice[len(strSlice)-1]
-		if 0 == strings.Compare(strings.ToLower(providerName), strings.ToLower(name)) {
+		if strings.Compare(strings.ToLower(providerName), strings.ToLower(name)) == 0 {
 			return key
 		}
 	}
 	return ""
 }
 
-func (c *CatalogItemsController) GetByName(name string) (CatalogItemInfo, bool, error) {
+func (c *CatalogItemsController) GetByName(name string) (*CatalogItemInfo, bool, error) {
 	key := c.findKey(name)
 
 	item, ok, err := c.store.GetByKey(key)
 	if err != nil || !ok {
-		return CatalogItemInfo{}, false, err
+		return nil, false, err
 	}
 
-	return CatalogItemInfo{
-		Name:              item.(*v1.CatalogItem).ObjectMeta.Name,
-		NameSpace:         item.(*v1.CatalogItem).ObjectMeta.Namespace,
-		DisplayName:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
-		Description:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
-		DescriptionFormat: item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
-		AssetUUID:         item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
-		Provider:          item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
-		DefaultLifespan:   item.(*v1.CatalogItem).Spec.Lifespan.Default,
+	return &CatalogItemInfo{
+		Name:                    item.(*v1.CatalogItem).ObjectMeta.Name,
+		NameSpace:               item.(*v1.CatalogItem).ObjectMeta.Namespace,
+		DisplayName:             item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/displayName"],
+		Description:             item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/description"],
+		DescriptionFormat:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
+		AssetUUID:               item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
+		Provider:                item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
+		defaultLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Default,
+		maximumLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Maximum,
+		relativeMaximumLifespan: item.(*v1.CatalogItem).Spec.Lifespan.RelativeMaximum,
 	}, true, nil
 }
 
-func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
-	var duration time.Duration
-	lifespan := ci.DefaultLifespan
-
+func lifespanToDuration(lifespan string) (time.Duration, error) {
 	duration, err := time.ParseDuration(lifespan)
 	if err == nil {
 		return duration, nil
@@ -131,4 +132,43 @@ func (ci *CatalogItemInfo) GetDefaultLifespan() (time.Duration, error) {
 	}
 
 	return time.ParseDuration(fmt.Sprintf("%dh", 24*value))
+}
+
+func (c *CatalogItemsController) GetDefaultLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.defaultLifespan)
+}
+
+func (c *CatalogItemsController) GetMaximumLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.maximumLifespan)
+}
+
+func (c *CatalogItemsController) GetRelativeMaximumLifespan(name string) (time.Duration, error) {
+	catalogItem, ok, err := c.GetByName(name)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok {
+		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
+	}
+
+	return lifespanToDuration(catalogItem.relativeMaximumLifespan)
 }

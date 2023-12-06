@@ -3,7 +3,7 @@
 # To use it, install the extension and then open this file in VS Code.
 # You can then send the requests by clicking the "Send Request" link above each request.
 
-@baseUrl = http://localhost:8080
+@baseUrl = http://127.0.0.1:20001
 
 ### Get Health
 GET {{baseUrl}}/health
@@ -12,23 +12,37 @@ GET {{baseUrl}}/health
 GET {{baseUrl}}/catalogItems
 
 ### Get CatalogItem by ID
-GET {{baseUrl}}/catalogItems/sandboxes-gpte.ocp4-dil-streaming-wksp.dev
+GET {{baseUrl}}/catalogItems/tests.babylon-empty-config.prod
 
 ### Start Provision
-POST {{baseUrl}}/provision
+POST {{baseUrl}}/serviceRequest
 Content-Type: application/json
 Accept: application/json
 
 {
-    "Name": "test-auto-20.babylon-empty-config.prod",
+    "Name": "test-auto-10.babylon-empty-config.prod",
     "ProviderName": "tests.babylon-empty-config.prod",
     "Purpose": "Testing",
-    "Start": "2023-08-15T01:23:45Z",
-    "Stop": "2023-08-16T01:23:45Z"
+    "Start": "2023-12-06T01:00:00Z",
+    "Stop": "2023-12-07T01:00:00Z"
 }
 
-### Get Provision status
-GET {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod
+### Get Provision information
+GET {{baseUrl}}/serviceRequest/test-auto-10.babylon-empty-config.prod
 
 ### Delete Provision
-DELETE {{baseUrl}}/provision/test-auto-20.babylon-empty-config.prod
+DELETE {{baseUrl}}/serviceRequest/test-auto-10.babylon-empty-config.prod
+
+### Get ratings
+GET {{baseUrl}}/ratings/tests.babylon-empty-config.prod
+
+### Create rating
+POST {{baseUrl}}/ratings
+Content-Type: application/json
+Accept: application/json
+
+{
+    "ProvisionName": "test-auto-10.babylon-empty-config.prod",
+    "Email":"kmalgich@redhat.com",
+    "Rating":40
+}

@@ -14,9 +14,10 @@ import (
 )
 
 type ResourceClaimsController struct {
-	clientSet *poolboy.PoolboyResourcesClient
-	store     cache.Store
-	namespace string
+	clientSet      *poolboy.PoolboyResourcesClient
+	store          cache.Store
+	namespace      string
+	OnStatusUpdate func(details ResourceClaimDetails)
 }
 
 type ResourceClaimParameters struct {
@@ -28,12 +29,15 @@ type ResourceClaimParameters struct {
 	Lifespan     *string
 }
 
-type ResourceClaimStatus struct {
+type ResourceClaimDetails struct {
+	Name           string
+	Provider       string
 	GUID           string
 	LabURL         string
 	RuntimeDefault string
 	RuntimeMaximum string
 	State          string
+	LifespanStart  string
 	LifespanEnd    string
 }
 
@@ -48,23 +52,31 @@ func NewResourceClaimsController(
 	namespace string,
 	ctx context.Context,
 ) (*ResourceClaimsController, error) {
+	rcController := ResourceClaimsController{
+		namespace: namespace,
+	}
+
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 	if err != nil {
 		return nil, err
 	}
 
-	poolboyClientSet, err := poolboy.NewForConfig(config, ctx)
+	rcController.clientSet, err = poolboy.NewForConfig(config, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	store := poolboy.WatchResources(poolboyClientSet, namespace)
+	rcEventHandlers := poolboy.ResourceClaimEvents{
+		UpdateEvent: rcController.OnResourceClaimUpdate,
+	}
 
-	return &ResourceClaimsController{
-		clientSet: poolboyClientSet,
-		store:     store,
-		namespace: namespace,
-	}, nil
+	rcController.store = poolboy.WatchResourceClaims(
+		rcController.clientSet,
+		namespace,
+		rcEventHandlers,
+	)
+
+	return &rcController, nil
 }
 
 func (c *ResourceClaimsController) CreateResourceClaim(
@@ -110,9 +122,9 @@ func (c *ResourceClaimsController) DeleteResourceClaim(name string) error {
 	return c.clientSet.ResourceClaims(c.namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
-func (c *ResourceClaimsController) GetResourceClaimStatus(
+func (c *ResourceClaimsController) GetResourceClaimDetails(
 	name string,
-) (*ResourceClaimStatus, bool, error) {
+) (*ResourceClaimDetails, bool, error) {
 	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
 	if err != nil || !ok {
 		return nil, ok, err
@@ -125,7 +137,9 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 		return nil, ok, nil
 	}
 
-	return &ResourceClaimStatus{
+	return &ResourceClaimDetails{
+		Name:           rc.Name,
+		Provider:       rc.Spec.Provider.Name,
 		GUID:           rc.Status.Summary.ProvisionData.GUID,
 		LabURL:         rc.Status.Summary.ProvisionData.LabURL,
 		RuntimeDefault: rc.Status.Summary.RuntimeDefault,
@@ -133,6 +147,27 @@ func (c *ResourceClaimsController) GetResourceClaimStatus(
 		State:          rc.Status.Summary.State,
 		LifespanEnd:    rc.Status.Lifespan.End,
 	}, ok, nil
+}
+
+func (c *ResourceClaimsController) UpdateLifespanEnd(name, lifespanEnd string) error {
+	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return fmt.Errorf("%s not found", name)
+	}
+
+	rc := item.(*v1.ResourceClaim)
+	rc.Spec.Lifespan.End = lifespanEnd
+
+	_, err = c.clientSet.ResourceClaims(c.namespace).Update(rc)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (c *ResourceClaimsController) GetUID(name string) (*string, error) {
@@ -148,4 +183,25 @@ func (c *ResourceClaimsController) GetUID(name string) (*string, error) {
 	rc := item.(*v1.ResourceClaim)
 
 	return (*string)(&rc.ObjectMeta.UID), nil
+}
+
+// -----------------------------------------------------------------------------
+// Event Handlers
+// -----------------------------------------------------------------------------
+func (c *ResourceClaimsController) OnResourceClaimUpdate(oldRC, newRC *v1.ResourceClaim) {
+	if oldRC.Status.Summary.State != newRC.Status.Summary.State {
+		if c.OnStatusUpdate != nil {
+			c.OnStatusUpdate(ResourceClaimDetails{
+				Name:           newRC.Name,
+				Provider:       newRC.Spec.Provider.Name,
+				GUID:           newRC.Status.Summary.ProvisionData.GUID,
+				LabURL:         newRC.Status.Summary.ProvisionData.LabURL,
+				RuntimeDefault: newRC.Status.Summary.RuntimeDefault,
+				RuntimeMaximum: newRC.Status.Summary.RuntimeMaximum,
+				State:          newRC.Status.Summary.State,
+				LifespanStart:  newRC.Status.Lifespan.Start,
+				LifespanEnd:    newRC.Status.Lifespan.End,
+			})
+		}
+	}
 }
