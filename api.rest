@@ -23,8 +23,8 @@ Accept: application/json
     "Name": "test-auto-10.babylon-empty-config.prod",
     "ProviderName": "tests.babylon-empty-config.prod",
     "Purpose": "Testing",
-    "Start": "2023-12-05T01:23:45Z",
-    "Stop": "2023-12-06T01:23:45Z"
+    "Start": "2023-12-06T01:00:00Z",
+    "Stop": "2023-12-07T01:00:00Z"
 }
 
 ### Get Provision information

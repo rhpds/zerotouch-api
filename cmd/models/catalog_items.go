@@ -27,9 +27,9 @@ type CatalogItemInfo struct {
 	DescriptionFormat       string
 	AssetUUID               string
 	Provider                string
-	DefaultLifespan         string
-	MaximumLifespan         string
-	RelativeMaximumLifespan string
+	defaultLifespan         string
+	maximumLifespan         string
+	relativeMaximumLifespan string
 }
 
 func NewCatalogItemsController(
@@ -109,9 +109,9 @@ func (c *CatalogItemsController) GetByName(name string) (*CatalogItemInfo, bool,
 		DescriptionFormat:       item.(*v1.CatalogItem).ObjectMeta.Annotations["babylon.gpte.redhat.com/descriptionFormat"],
 		AssetUUID:               item.(*v1.CatalogItem).ObjectMeta.Labels["gpte.redhat.com/asset-uuid"],
 		Provider:                item.(*v1.CatalogItem).ObjectMeta.Labels["babylon.gpte.redhat.com/Provider"],
-		DefaultLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Default,
-		MaximumLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Maximum,
-		RelativeMaximumLifespan: item.(*v1.CatalogItem).Spec.Lifespan.RelativeMaximum,
+		defaultLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Default,
+		maximumLifespan:         item.(*v1.CatalogItem).Spec.Lifespan.Maximum,
+		relativeMaximumLifespan: item.(*v1.CatalogItem).Spec.Lifespan.RelativeMaximum,
 	}, true, nil
 }
 
@@ -144,7 +144,7 @@ func (c *CatalogItemsController) GetDefaultLifespan(name string) (time.Duration,
 		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
 	}
 
-	return lifespanToDuration(catalogItem.DefaultLifespan)
+	return lifespanToDuration(catalogItem.defaultLifespan)
 }
 
 func (c *CatalogItemsController) GetMaximumLifespan(name string) (time.Duration, error) {
@@ -157,7 +157,7 @@ func (c *CatalogItemsController) GetMaximumLifespan(name string) (time.Duration,
 		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
 	}
 
-	return lifespanToDuration(catalogItem.MaximumLifespan)
+	return lifespanToDuration(catalogItem.maximumLifespan)
 }
 
 func (c *CatalogItemsController) GetRelativeMaximumLifespan(name string) (time.Duration, error) {
@@ -170,5 +170,5 @@ func (c *CatalogItemsController) GetRelativeMaximumLifespan(name string) (time.D
 		return 0, fmt.Errorf("catalog item \"%s\" not found", name)
 	}
 
-	return lifespanToDuration(catalogItem.RelativeMaximumLifespan)
+	return lifespanToDuration(catalogItem.relativeMaximumLifespan)
 }

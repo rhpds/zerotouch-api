@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rhpds/zerotouch-api/cmd/log"
@@ -48,35 +49,59 @@ func NewCatalogItemsHandler(
 }
 
 func (h *CatalogItemsHandler) OnResourceClaimStatusUpdate(details models.ResourceClaimDetails) {
+	if strings.ToLower(details.State) != "started" {
+		return
+	}
 
-	// new_lifespan_end = time.now() + catalogitem.spec.lifespan.default
-	//
-	// new_lifespan_end < status.lifespan.start + catalogitem.spec.lifespan.maximum
-	// new_lifespan_end < datetime.now(UTC) + catalogitem.spec.lifespan.relativeMaximum
-
-	fmt.Printf("%s: status updated to %s\n", details.Name, details.State)
-	fmt.Printf("Lifespan start: %s\n", details.LifespanStart)
-	fmt.Printf("Lifespan end: %s\n", details.LifespanEnd)
-
-	defaultLifespan, _ := h.catalogItemsController.GetDefaultLifespan(details.Provider)
+	defaultLifespan, err := h.catalogItemsController.GetDefaultLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve default lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
 	newLifespanEnd := time.Now().Add(defaultLifespan)
-	fmt.Printf("new lifespan end: %s\n", newLifespanEnd.Format(time.RFC3339))
 
-	maximumLifespan, _ := h.catalogItemsController.GetMaximumLifespan(details.Provider)
-	lifespanMax, _ := time.Parse(time.RFC3339, details.LifespanStart)
+	maximumLifespan, err := h.catalogItemsController.GetMaximumLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve maximum lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
+	lifespanMax, err := time.Parse(time.RFC3339, details.LifespanStart)
+	if err != nil {
+		log.Logger.Error("can't parse lifespan start", "lifespan start", details.LifespanStart, "error", err.Error())
+		return
+	}
 	lifespanMax = lifespanMax.Add(maximumLifespan)
-	fmt.Printf("lifespan max: %s\n", lifespanMax.Format(time.RFC3339))
 
-	relativeMaximumLifespan, _ := h.catalogItemsController.GetRelativeMaximumLifespan(details.Provider)
+	relativeMaximumLifespan, err := h.catalogItemsController.GetRelativeMaximumLifespan(details.Provider)
+	if err != nil {
+		log.Logger.Error("can't retrieve relative maximum lifespan", "provider name", details.Provider, "error", err.Error())
+		return
+	}
 	lifespanRelMax := time.Now().Add(relativeMaximumLifespan)
-	fmt.Printf("lifespan relative max: %s\n", lifespanRelMax.Format(time.RFC3339))
 
-	//	fmt.Printf("lifespan duration: %s\n", defaultLifespan.String())
-	//	fmt.Printf("Maximum lifespan: %s\n", maximumLifespan.String())
-	//	fmt.Printf("Relative Maximum lifespan: %s\n\n", relativeMaximumLifespan.String())
+	if newLifespanEnd.After(lifespanMax) {
+		newLifespanEnd = lifespanMax
+	}
 
-	fmt.Printf("\n")
+	if newLifespanEnd.After(lifespanRelMax) {
+		newLifespanEnd = lifespanRelMax
+	}
 
+	err = h.rcController.UpdateLifespanEnd(details.Name, newLifespanEnd.Format(time.RFC3339))
+	if err != nil {
+		log.Logger.Error(
+			"can't update provision lifespan end",
+			"provision name", details.Name,
+			"error", err.Error(),
+		)
+		return
+	}
+
+	log.Logger.Info(
+		"lifespan end updated",
+		"provision name", details.Name,
+		"new lifespan end", newLifespanEnd.Format(time.RFC3339),
+	)
 }
 
 func (h *CatalogItemsHandler) ListCatalogItems(

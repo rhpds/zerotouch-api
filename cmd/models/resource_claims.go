@@ -149,6 +149,27 @@ func (c *ResourceClaimsController) GetResourceClaimDetails(
 	}, ok, nil
 }
 
+func (c *ResourceClaimsController) UpdateLifespanEnd(name, lifespanEnd string) error {
+	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return fmt.Errorf("%s not found", name)
+	}
+
+	rc := item.(*v1.ResourceClaim)
+	rc.Spec.Lifespan.End = lifespanEnd
+
+	_, err = c.clientSet.ResourceClaims(c.namespace).Update(rc)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *ResourceClaimsController) GetUID(name string) (*string, error) {
 	item, ok, err := c.store.GetByKey(fmt.Sprintf("%s/%s", c.namespace, name))
 	if err != nil {
